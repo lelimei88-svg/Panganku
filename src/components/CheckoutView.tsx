@@ -15,7 +15,9 @@ import {
   CheckCircle, 
   Trash2,
   Plus,
-  Minus
+  Minus,
+  Mail,
+  Send
 } from 'lucide-react';
 import { Product, CartItem, Order } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -344,6 +346,73 @@ export default function CheckoutView({
               <p><strong>Alamat:</strong> {orderCompleted.address}</p>
               <p><strong>Metode Pembayaran:</strong> {orderCompleted.paymentMethod === 'cod' ? 'Cash On Delivery (COD)' : 'QRIS Digital'}</p>
               <p className="text-[10px] text-gray-400 font-mono"><strong>CSRF Security Hash:</strong> {orderCompleted.csrfToken}</p>
+            </div>
+
+            {/* Gmail Invoice Integration Block */}
+            <div className="bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100 text-left space-y-4">
+              <div className="flex items-center gap-2 text-primary border-b border-emerald-100 pb-2">
+                <Mail className="w-4.5 h-4.5 text-secondary" />
+                <span className="font-headline text-sm font-extrabold">Kirim Invoice Resmi via Gmail API</span>
+              </div>
+
+              {emailSent ? (
+                <div className="p-3.5 bg-emerald-100 border border-emerald-200 text-primary rounded-xl text-xs font-bold flex items-center gap-2">
+                  <CheckCircle className="w-4 w-4 text-primary shrink-0" />
+                  <span>Invoice & Konfirmasi Pesanan resmi berhasil dikirim langsung dari server Gmail Anda!</span>
+                </div>
+              ) : !googleAccessToken ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Masuk menggunakan Google Workspace untuk mengirim invoice konfirmasi resmi ini secara otomatis ke kotak masuk email Anda sekarang.
+                  </p>
+                  <button 
+                    type="button"
+                    onClick={() => loginWithGoogle && loginWithGoogle().catch(() => {})}
+                    className="w-full py-2.5 bg-white hover:bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-700 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 48 48">
+                      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                    </svg>
+                    <span>Hubungkan Akun Gmail</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Masukkan alamat email tujuan untuk mengirimkan tanda terima transaksi logistik premium secara real-time.
+                  </p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="email" 
+                      placeholder="nama@email.com"
+                      value={targetEmail}
+                      onChange={(e) => setTargetEmail(e.target.value)}
+                      className="flex-grow px-3.5 py-2 border border-gray-200 bg-white rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-secondary focus:border-transparent transition-all"
+                    />
+                    <button 
+                      type="button"
+                      onClick={handleSendInvoiceEmail}
+                      disabled={emailSending}
+                      className="px-4 py-2 bg-secondary text-white hover:bg-opacity-95 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-md shrink-0 cursor-pointer disabled:opacity-50"
+                    >
+                      {emailSending ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Mengirim...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
