@@ -22,7 +22,7 @@ import { useAuth } from './context/AuthContext.tsx';
 
 export default function App() {
   const [activeView, setActiveView] = useState<'catalog' | 'checkout' | 'admin'>('catalog');
-  const { user, token, loginWithGoogle, logout } = useAuth();
+  const { user, token, googleAccessToken, loginWithGoogle, logout } = useAuth();
   
   // Cart state initialized with default 2 items
   const [cartItems, setCartItems] = useState<CartItem[]>([
@@ -292,6 +292,8 @@ export default function App() {
               onNavigateToCatalog={() => setActiveView('catalog')}
               onAddNewOrder={handleAddNewOrder}
               onNavigateToAdmin={() => setActiveView('admin')}
+              googleAccessToken={googleAccessToken}
+              loginWithGoogle={loginWithGoogle}
             />
           )}
 
@@ -300,6 +302,8 @@ export default function App() {
               orders={orders}
               onApproveOrder={handleApproveOrder}
               onNavigateToCatalog={() => setActiveView('catalog')}
+              googleAccessToken={googleAccessToken}
+              loginWithGoogle={loginWithGoogle}
             />
           )}
         </motion.div>

@@ -28,6 +28,8 @@ interface CheckoutViewProps {
   onNavigateToCatalog: () => void;
   onAddNewOrder: (order: Order) => void;
   onNavigateToAdmin: () => void;
+  googleAccessToken?: string | null;
+  loginWithGoogle?: () => Promise<string | null>;
 }
 
 export default function CheckoutView({
@@ -37,12 +39,19 @@ export default function CheckoutView({
   onClearCart,
   onNavigateToCatalog,
   onAddNewOrder,
-  onNavigateToAdmin
+  onNavigateToAdmin,
+  googleAccessToken,
+  loginWithGoogle
 }: CheckoutViewProps) {
   // Forms state
   const [recipientName, setRecipientName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress] = useState('');
+
+  // Gmail Invoice states
+  const [targetEmail, setTargetEmail] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   // Payment State
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'qris'>('cod');
@@ -173,6 +182,103 @@ export default function CheckoutView({
       setIsSubmitting(false);
       onClearCart();
     }, 1500);
+  };
+
+  // Gmail Invoice sender API call
+  const handleSendInvoiceEmail = async () => {
+    if (!orderCompleted || !googleAccessToken) return;
+    if (!targetEmail.trim()) {
+      alert('Tolong masukkan email tujuan.');
+      return;
+    }
+
+    // MANDATORY USER CONFIRMATION per Workspace SKILL instructions!
+    const confirmed = window.confirm(`Kirim detail invoice ke email ${targetEmail}?`);
+    if (!confirmed) return;
+
+    setEmailSending(true);
+    setEmailSent(false);
+
+    try {
+      const subject = `[PanganKu] Konfirmasi & Invoice Pesanan ${orderCompleted.id}`;
+      const itemsListHtml = orderCompleted.items.map(item => 
+        `<li><strong>${item.productName}</strong> x${item.quantity} (Rp ${item.price.toLocaleString('id-ID')})</li>`
+      ).join('');
+
+      const bodyHtml = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e1e8ed; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+          <div style="background-color: #052f0c; color: white; padding: 24px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">PanganKu</h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #fe6a34; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Invoice Pemesanan Sukses</p>
+          </div>
+          <div style="padding: 24px; color: #2c3e50; line-height: 1.6;">
+            <h2 style="font-size: 18px; color: #052f0c; margin-top: 0;">Halo ${orderCompleted.clientName},</h2>
+            <p>Terima kasih telah berbelanja pertanian organik & segar di PanganKu! Pesanan Anda telah diterima sistem logistik kami.</p>
+            
+            <div style="background-color: #f8f9fa; border-left: 4px solid #fe6a34; padding: 16px; border-radius: 4px; margin: 20px 0;">
+              <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">Ringkasan Pesanan:</p>
+              <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+                ${itemsListHtml}
+              </ul>
+              <hr style="border: 0; border-top: 1px solid #e1e8ed; margin: 12px 0;" />
+              <table style="width: 100%; font-size: 13px;">
+                <tr><td>Subtotal:</td><td style="text-align: right; font-weight: bold;">Rp ${orderCompleted.subtotal.toLocaleString('id-ID')}</td></tr>
+                <tr><td>Diskon Hemat:</td><td style="text-align: right; color: #fe6a34; font-weight: bold;">-Rp ${orderCompleted.discount.toLocaleString('id-ID')}</td></tr>
+                <tr><td>Ongkos Kirim:</td><td style="text-align: right; font-weight: bold;">Rp ${orderCompleted.shipping.toLocaleString('id-ID')}</td></tr>
+                <tr style="font-size: 15px; font-weight: bold; color: #052f0c;">
+                  <td>Total Bayar:</td>
+                  <td style="text-align: right;">Rp ${orderCompleted.total.toLocaleString('id-ID')}</td>
+                </tr>
+              </table>
+            </div>
+
+            <p style="font-size: 13px;"><strong>Alamat Pengiriman:</strong><br />${orderCompleted.address}</p>
+            <p style="font-size: 13px;"><strong>Metode Pembayaran:</strong> ${orderCompleted.paymentMethod === 'cod' ? 'Bayar di Tempat (COD)' : 'QRIS Digital Auto'}</p>
+            
+            <hr style="border: 0; border-top: 1px solid #e1e8ed; margin: 24px 0;" />
+            <p style="font-size: 11px; color: #7f8c8d; text-align: center; margin: 0;">PanganKu Fresh Supply Chain - Securely Transacted via Google API © 2026</p>
+          </div>
+        </div>
+      `;
+
+      const base64Utf8Subject = btoa(unescape(encodeURIComponent(subject)));
+      const emailLines = [
+        `To: ${targetEmail}`,
+        'Content-Type: text/html; charset=utf-8',
+        'MIME-Version: 1.0',
+        `Subject: =?utf-8?B?${base64Utf8Subject}?=`,
+        '',
+        bodyHtml
+      ];
+      
+      const mime = emailLines.join('\r\n');
+      const base64Raw = btoa(unescape(encodeURIComponent(mime)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${googleAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          raw: base64Raw
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Gmail API returned code ${res.status}`);
+      }
+
+      setEmailSent(true);
+    } catch (err: any) {
+      console.error('Failed to send invoice email:', err);
+      alert(`Gagal mengirim invoice email: ${err.message || 'Unknown network error'}`);
+    } finally {
+      setEmailSending(false);
+    }
   };
 
   // Pre-seed some default info on click for extreme ease of user play

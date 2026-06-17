@@ -20,23 +20,29 @@ import {
   LogOut,
   Sparkles,
   RefreshCw,
-  Plus
+  Plus,
+  Mail
 } from 'lucide-react';
 import { Order } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import GmailManager from './GmailManager.tsx';
 
 interface AdminConsoleViewProps {
   orders: Order[];
   onApproveOrder: (orderId: string) => void;
   onNavigateToCatalog: () => void;
+  googleAccessToken: string | null;
+  loginWithGoogle: () => Promise<string | null>;
 }
 
 export default function AdminConsoleView({
   orders,
   onApproveOrder,
-  onNavigateToCatalog
+  onNavigateToCatalog,
+  googleAccessToken,
+  loginWithGoogle
 }: AdminConsoleViewProps) {
-  const [activeTab, setActiveTab] = useState<'orders' | 'inventory'>('orders');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'gmail'>('dashboard');
   const [hideConfidential, setHideConfidential] = useState(false);
   const [revenueOffset, setRevenueOffset] = useState(482900000); // Rp 482.9M default starting value
 
@@ -140,24 +146,34 @@ export default function AdminConsoleView({
         {/* Nav Links */}
         <nav className="flex-grow space-y-1.5 text-xs text-white/70">
           <button 
-            className="w-full flex items-center justify-between px-4 py-3.5 bg-secondary text-white rounded-xl transition-all font-bold text-left cursor-pointer shadow-md shadow-secondary/5"
+            onClick={() => setActiveTab('dashboard')}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all font-bold text-left cursor-pointer ${
+              activeTab === 'dashboard'
+                ? 'bg-secondary text-white shadow-md shadow-secondary/5'
+                : 'hover:bg-white/10 hover:text-white text-white/75'
+            }`}
           >
             <span className="flex items-center gap-3">
               <Sparkles className="w-4 h-4" />
               <span>Dashboard Logistik</span>
             </span>
-            <ChevronRight className="w-3.5 h-3.5" />
+            {activeTab === 'dashboard' && <ChevronRight className="w-3.5 h-3.5" />}
           </button>
 
-          <a href="#inventory" className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/10 hover:text-white rounded-xl transition-all cursor-pointer">
-            <Lock className="w-4 h-4" />
-            <span>Pricing Ledger</span>
-          </a>
-
-          <a href="#order-mgmt" className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/10 hover:text-white rounded-xl transition-all cursor-pointer">
-            <Clock className="w-4 h-4" />
-            <span>Fulfillment Queue</span>
-          </a>
+          <button 
+            onClick={() => setActiveTab('gmail')}
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all font-bold text-left cursor-pointer ${
+              activeTab === 'gmail'
+                ? 'bg-secondary text-white shadow-md shadow-secondary/5'
+                : 'hover:bg-white/10 hover:text-white text-white/75'
+            }`}
+          >
+            <span className="flex items-center gap-3">
+              <Mail className="w-4 h-4" />
+              <span>Gmail Customer Hub</span>
+            </span>
+            {activeTab === 'gmail' && <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
         </nav>
 
         {/* Profile and Settings Footer */}
@@ -286,7 +302,8 @@ export default function AdminConsoleView({
         </div>
 
         {/* Dynamic split section grid columns mapping */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {activeTab === 'dashboard' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* LEFT: Order Management fulfillment desk */}
           <section id="order-mgmt" className="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -534,6 +551,14 @@ export default function AdminConsoleView({
           </section>
 
         </div>
+        ) : (
+          <div className="w-full">
+            <GmailManager 
+              googleAccessToken={googleAccessToken}
+              loginWithGoogle={loginWithGoogle}
+            />
+          </div>
+        )}
 
       </main>
 
