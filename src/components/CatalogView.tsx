@@ -8,12 +8,12 @@ import {
   User, 
   ArrowRight, 
   TrendingUp,
-  BarChart2, 
   ShieldCheck, 
   Plus, 
   Minus,
   Check,
-  Zap
+  Zap,
+  Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -423,35 +423,35 @@ export default function CatalogView({
             </div>
           </section>
 
-          {/* Section: Modern Enterprise Infrastructure Showcase */}
-          <section className="bg-emerald-50/50 rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 border border-emerald-100">
+          {/* Section: Warm Buyer-Supportive Showcase */}
+          <section className="bg-emerald-50/50 rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 border border-emerald-100 animate-fadeIn">
             <div className="md:max-w-2xl space-y-3">
-              <span className="px-3 py-1 bg-emerald-100 text-primary rounded-full text-[10px] font-bold uppercase tracking-wider">
-                🛡️ Enterprise Infrastructure
+              <span className="px-3 py-1 bg-emerald-100 text-[#052f0c] rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit">
+                🥬 Rantai Pasok Segar & Amanah
               </span>
               <h3 className="font-headline text-lg md:text-2xl font-black text-primary">
-                Modern Enterprise Food Infrastructure & Sourcing
+                Dukungan Nyata untuk Petani Lokal & Kesehatan Keluarga Anda
               </h3>
               <p className="text-gray-600 text-xs md:text-sm leading-relaxed">
-                PanganKu Enterprise menggunakan teknologi mutakhir untuk memastikan ketersediaan data real-time. Kami memanfaatkan <strong>TanStack Query</strong> untuk manajemen caching yang efisien dan <strong>Supabase RLS (Row Level Security)</strong> untuk menjamin keamanan enkripsi data transaksi pelanggan Anda di tingkat database.
+                Setiap sayur, buah, dan bahan pangan sehat yang Anda beli di <strong>PanganKu</strong> diproduksi langsung oleh kelompok tani lokal binaan kami. Dengan sistem logistik yang cepat, higienis, dan terpercaya, kami menjamin pesanan tiba di dapur Anda dalam kondisi kesegaran maksimal. Belanja sehat sekaligus menggerakkan ekonomi petani daerah!
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
-                <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-primary shadow-xs">
-                  ⚡ High Availability 99.99%
+                <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-[#052f0c] shadow-xs">
+                  🥗 100% Organik & Segar
                 </span>
-                <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-primary shadow-xs">
-                  🔑 End-to-End CSRF Encryption
+                <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-[#052f0c] shadow-xs">
+                  👨‍🌾 Dukung Petani Lokal Binaan
                 </span>
-                <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-primary shadow-xs">
-                  🥬 Petani Lokal Binaan
+                <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-[#052f0c] shadow-xs">
+                  🚚 Pengiriman Cepat & Higienis
                 </span>
               </div>
             </div>
             
             <div className="w-full md:w-56 h-36 bg-primary rounded-2xl flex flex-col items-center justify-center p-4 text-white text-center shadow-lg relative overflow-hidden">
-              <BarChart2 className="w-12 h-12 text-accent stroke-1 animate-[bounce_2.5s_infinite_ease-in-out]" />
-              <span className="font-headline text-lg font-extrabold mt-2">Logistics Sync</span>
-              <span className="text-[9px] font-mono text-emerald-300">Live DB Connection active</span>
+              <Heart className="w-10 h-10 text-secondary fill-secondary animate-[pulse_2s_infinite]" />
+              <span className="font-headline text-base font-extrabold mt-3">Pelanggan Setia</span>
+              <span className="text-[10px] text-emerald-250">Nutrisi Terbaik dari Alam</span>
               {/* background vector effect */}
               <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-white/5 rounded-full" />
             </div>
