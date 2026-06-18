@@ -16,11 +16,7 @@ import {
   Info,
   LogIn,
   LogOut,
-  User as UserIcon,
-  Download,
-  WifiOff,
-  Smartphone,
-  X
+  User as UserIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext.tsx';
@@ -29,48 +25,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<'catalog' | 'checkout' | 'admin' | 'optimization'>('catalog');
   const { user, token, googleAccessToken, loginWithGoogle, logout } = useAuth();
 
-  // PWA & Offline states
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(false);
-  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      console.log('[PWA] caught beforeinstallprompt event');
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Check if already in standalone custom mode
-    if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
-      setIsAlreadyInstalled(true);
-    }
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallApp = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`[PWA] Install choice outcome: ${outcome}`);
-      setDeferredPrompt(null);
-    } else {
-      setShowInstallGuide(true);
-    }
-  };
   
   // Cart state initialized with default 2 items
   const [cartItems, setCartItems] = useState<CartItem[]>([
@@ -282,24 +237,7 @@ export default function App() {
             <span>⚡ Optimasi & Cache</span>
           </button>
 
-          {/* PWA & Offline Indicator Badges */}
-          {isOffline && (
-            <span className="px-2.5 py-1 bg-amber-500/95 border border-amber-400 text-[#052f0c] rounded-xl text-[10px] font-black flex items-center gap-1.5 animate-pulse shrink-0">
-              <WifiOff className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Mode Offline</span>
-            </span>
-          )}
 
-          {!isAlreadyInstalled && (
-            <button
-              onClick={handleInstallApp}
-              className="px-2.5 py-1 bg-[#fe6a34] hover:bg-[#ab3500] text-white font-black rounded-xl text-[10px] transition-all cursor-pointer flex items-center gap-1.5 shadow-md shrink-0 animate-pulse"
-              title="Instal PanganKu ke HP Anda untuk Akses Offline!"
-            >
-              <Download className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Instal App</span>
-            </button>
-          )}
 
           {/* Firebase Authentication integration */}
           <div className="h-4.5 w-px bg-white/20 mx-1 hidden sm:block"></div>
@@ -391,88 +329,6 @@ export default function App() {
             </div>
           )}
         </motion.div>
-      </AnimatePresence>
-
-      {/* PWA Install Guide Modal */}
-      <AnimatePresence>
-        {showInstallGuide && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-emerald-100"
-            >
-              {/* Header */}
-              <div className="bg-[#052f0c] text-white p-6 relative">
-                <button 
-                  onClick={() => setShowInstallGuide(false)}
-                  className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors cursor-pointer flex items-center justify-center"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white/10 rounded-2xl">
-                    <Smartphone className="w-8 h-8 text-[#fe6a34]" />
-                  </div>
-                  <div>
-                    <h3 className="font-headline font-black text-xl tracking-tight">Instal PanganKu ke HP</h3>
-                    <p className="text-emerald-200 text-xs">Akses 100% lancar walau tanpa koneksi internet!</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 space-y-5 text-gray-700">
-                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
-                  <div className="p-1 bg-emerald-200 text-[#052f0c] rounded-full shrink-0">
-                    <Heart className="w-4 h-4 fill-[#052f0c]" />
-                  </div>
-                  <p className="text-xs leading-relaxed text-[#052f0c] font-medium">
-                    Didukung teknologi modern <strong>PWA (Progressive Web App) & Service Worker</strong>. Setelah diinstal, aplikasi akan terunggah di HP Anda agar bisa dibuka kapan saja, lebih hemat kuota data, dan bekerja penuh di luar jaringan (luring).
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <h4 className="font-bold text-sm text-[#052f0c] flex items-center gap-1.5 border-b pb-2">
-                    📱 Cara Menginstal di Ponsel Anda:
-                  </h4>
-                  
-                  {/* Android Instruction */}
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-black text-[#ab3500] uppercase tracking-wider">🤖 HP Android (Google Chrome / Samsung Internet):</p>
-                    <ol className="list-decimal list-inside text-xs space-y-1 pl-1 text-gray-600 leading-relaxed">
-                      <li>Klik ikon <strong>tiga titik vertikal (⋮)</strong> di sudut kanan atas layar browser Anda.</li>
-                      <li>Pilih menu <strong>"Instal aplikasi"</strong> atau <strong className="text-secondary">"Tambahkan ke Layar Utama"</strong>.</li>
-                      <li>Konfirmasi pemasangan, dan ikon <strong className="text-[#052f0c]">PanganKu</strong> akan muncul langsung di galeri aplikasi HP Anda!</li>
-                    </ol>
-                  </div>
-
-                  {/* iOS/iPhone Instruction */}
-                  <div className="space-y-1.5 pt-1.5 border-t border-gray-100">
-                    <p className="text-xs font-black text-[#ab3500] uppercase tracking-wider">🍏 iPhone / iPad (Safari):</p>
-                    <ol className="list-decimal list-inside text-xs space-y-1 pl-1 text-gray-600 leading-relaxed">
-                      <li>Buka situs ini di browser bawaan <strong>Safari</strong>.</li>
-                      <li>Klik ikon <strong className="text-secondary">"Bagikan" (Share)</strong> yang menyerupai kotak dengan panah ke atas di bagian bawah.</li>
-                      <li>Gulir ke bawah lalu klik opsi <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong>.</li>
-                      <li>Klik <strong>"Tambah"</strong> di sudut kanan atas. Selesai!</li>
-                    </ol>
-                  </div>
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="pt-4 flex justify-end">
-                  <button
-                    onClick={() => setShowInstallGuide(false)}
-                    className="px-6 py-2.5 bg-[#052f0c] text-white hover:bg-[#0c4015] font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                  >
-                    Saya Mengerti, Tutup
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
       </AnimatePresence>
 
     </div>
