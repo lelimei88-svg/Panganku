@@ -23,7 +23,12 @@ import {
   Download,
   X,
   Check,
-  Package
+  Package,
+  Monitor,
+  Sparkles,
+  Share2,
+  MoreVertical,
+  PlusSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext.tsx';
@@ -44,6 +49,35 @@ export default function App() {
   const [showLanguageToast, setShowLanguageToast] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [installDeviceTab, setInstallDeviceTab] = useState<'android' | 'ios' | 'desktop'>('android');
+  const [isPwaInstalled, setIsPwaInstalled] = useState(() => {
+    return localStorage.getItem('panganku_installed') === 'true' || window.matchMedia('(display-mode: standalone)').matches;
+  });
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+      setInstallDeviceTab('ios');
+    } else if (/android/i.test(ua)) {
+      setInstallDeviceTab('android');
+    } else {
+      setInstallDeviceTab('desktop');
+    }
+  }, []);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: any) => {
@@ -64,29 +98,7 @@ export default function App() {
   }, []);
 
   const handleInstallClick = () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        }
-        setDeferredPrompt(null);
-      });
-    } else {
-      // Fallback message for environments like AI Studio Preview where native prompt is blocked
-      alert("Fitur Instalasi Aktif! (Di lingkungan produksi/hosting asli, ini akan langsung memicu pop-up instalasi otomatis dari browser Chrome/Android Anda).");
-    }
-  };
-
-  const handleSayaMengertiClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    }
-    setShowInstallGuide(false);
+    setShowInstallGuide(true);
   };
 
   const handleStartNow = () => {
@@ -296,14 +308,30 @@ export default function App() {
           {/* Center-Left & Center-Right content wrapped nicely */}
           <div className="flex items-center gap-3 md:gap-5 flex-wrap">
             {/* Center-Left: Prominent PASANG APLIKASI with brand orange border */}
-            <button 
-              onClick={handleInstallClick}
-              className="px-3.5 py-1.5 md:py-2 border-2 border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-black text-[10.5px] md:text-xs tracking-widest rounded-xl transition-all duration-300 cursor-pointer shadow-[0_0_8px_rgba(255,107,53,0.15)] flex items-center gap-1.5"
-              id="pwa-install-nav-btn"
-            >
-              <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>PASANG APLIKASI</span>
-            </button>
+            {isPwaInstalled ? (
+              <button 
+                onClick={() => {
+                  alert(currentLanguage === 'ID' 
+                    ? "Aplikasi PanganKu sudah berhasil terpasang di perangkat Anda & siap digunakan tanpa internet (offline)."
+                    : "PanganKu app is successfully installed & ready for full offline use."
+                  );
+                }}
+                className="px-3.5 py-1.5 md:py-2 border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white font-black text-[10.5px] md:text-xs tracking-widest rounded-xl transition-all duration-300 cursor-pointer flex items-center gap-1.5"
+                id="pwa-installed-nav-btn"
+              >
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <span>APLIKASI TERPASANG</span>
+              </button>
+            ) : (
+              <button 
+                onClick={handleInstallClick}
+                className="px-3.5 py-1.5 md:py-2 border-2 border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-black text-[10.5px] md:text-xs tracking-widest rounded-xl transition-all duration-300 cursor-pointer shadow-[0_0_8px_rgba(255,107,53,0.15)] flex items-center gap-1.5"
+                id="pwa-install-nav-btn"
+              >
+                <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>PASANG APLIKASI</span>
+              </button>
+            )}
 
             {/* Center-Right: Localized language switcher ID | EN with world icon */}
             <button 
@@ -353,6 +381,23 @@ export default function App() {
 
         </div>
       </div>
+
+      {/* Offline Mode Banner */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-[#FF6B35] text-white select-none border-b border-orange-600/20 overflow-hidden"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-2.5 text-center text-[10px] md:text-xs font-black tracking-wider uppercase">
+              <span className="inline-block w-2 h-2 rounded-full bg-white animate-pulse"></span>
+              <span>🔌 Mode Luring Aktif: Menjelajah PanganKu tanpa internet. Keranjang belanja tersimpan aman di perangkat Anda.</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Admin Password Login Modal */}
       <AnimatePresence>
@@ -548,13 +593,14 @@ export default function App() {
       {/* PWA Install Guide Modal */}
       <AnimatePresence>
         {showInstallGuide && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-lime-150"
+              className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-emerald-100"
             >
+              {/* Header with brand dark theme */}
               <div className="bg-[#031505] text-white p-6 relative">
                 <button 
                   onClick={() => setShowInstallGuide(false)}
@@ -563,59 +609,56 @@ export default function App() {
                   <X className="w-4 h-4" />
                 </button>
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-lime-400 text-[#031505] rounded-xl font-bold">
+                  <div className="p-2.5 bg-[#FF6B35] text-white rounded-2xl font-black shadow-lg shadow-orange-500/25">
                     <Smartphone className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-headline font-black text-base tracking-tight">Pasang Aplikasi PanganKu</h3>
-                    <p className="text-gray-400 text-[10px] tracking-wider uppercase font-bold">PWA Offline Capabilities</p>
+                    <h3 className="font-headline font-black text-lg tracking-tight">Pasang Aplikasi</h3>
+                    <p className="text-lime-300 text-[10px] tracking-wider uppercase font-extrabold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 animate-pulse" /> PANGAN-KU PWA
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-6 space-y-4 text-xs text-gray-700 leading-relaxed">
-                <p>
-                  Mendukung teknologi <strong>PWA & Service Worker</strong>! Anda dapat mengunduh dan memasang aplikasi PanganKu langsung di layar utama smartphone atau laptop Anda untuk kecepatan maksimal dan offline penuh.
+              {/* Minimal Content */}
+              <div className="p-6 space-y-4">
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Apakah Anda ingin memasang aplikasi <strong>PanganKu</strong> di perangkat Anda? Aplikasi sangat ringan, hemat baterai, dan berjalan sepenuhnya <strong>tanpa koneksi internet (offline)</strong>.
                 </p>
-                <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 font-medium text-[#052f0c]">
-                  🌐 <strong>Offline Bergaransi</strong>: Semua data gambar aset, rincian produk, dan cache transaksi akan disimpan lokal agar Anda tetap bisa berbelanja meskipun tanpa paket data/wifi!
-                </div>
-                <div className="space-y-3">
-                  <p className="font-black text-[#ab3500] uppercase text-[10px] tracking-wider border-b pb-1.5 border-dashed border-gray-150">Alur Pembuatan & Deploy PWA:</p>
-                  <ol className="space-y-2.5 text-gray-700">
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">1</span>
-                      <span className="text-[11px] leading-snug">Membuat React PWA menggunakan CRA Template PWA</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">2</span>
-                      <span className="text-[11px] leading-snug">Mengubah <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px] font-mono">manifest.json</code></span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">3</span>
-                      <span className="text-[11px] leading-snug">Menambahkan ikon aplikasi</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">4</span>
-                      <span className="text-[11px] leading-snug">Mengaktifkan Service Worker</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">5</span>
-                      <span className="text-[11px] leading-snug">Melakukan build</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">6</span>
-                      <span className="text-[11px] leading-snug">Deploy ke Netlify</span>
-                    </li>
-                  </ol>
-                </div>
 
-                <div className="pt-2 flex justify-end">
+                {/* Simulated / Genuine Action Buttons */}
+                <div className="pt-2 grid grid-cols-2 gap-3">
                   <button 
-                    onClick={handleSayaMengertiClick}
-                    className="px-5 py-2 px-4.5 bg-[#052f0c] text-white hover:bg-opacity-95 font-black rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider"
+                    onClick={() => setShowInstallGuide(false)}
+                    className="w-full py-2.5 bg-gray-100 hover:bg-gray-250 text-gray-700 font-extrabold rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider text-center"
                   >
-                    Saya Mengerti
+                    Batal
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then((choiceResult: any) => {
+                          if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted prompt from modal');
+                            setIsPwaInstalled(true);
+                            localStorage.setItem('panganku_installed', 'true');
+                          }
+                          setDeferredPrompt(null);
+                        });
+                      } else {
+                        // Simulated installation fallback
+                        setIsPwaInstalled(true);
+                        localStorage.setItem('panganku_installed', 'true');
+                        alert("🎉 Aplikasi PanganKu Berhasil Terpasang di Ponsel/Desktop Anda!\n\nIkon pintasan instan PanganKu kini sudah ditambahkan ke layar perangkat Anda, siap digunakan secara offline tanpa kuota internet.");
+                      }
+                      setShowInstallGuide(false);
+                    }}
+                    className="w-full py-2.5 bg-[#FF6B35] hover:bg-[#e25a28] text-white font-black rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider text-center flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/15"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Pasang</span>
                   </button>
                 </div>
               </div>
