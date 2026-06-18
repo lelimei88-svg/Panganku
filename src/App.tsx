@@ -623,9 +623,37 @@ export default function App() {
 
               {/* Minimal Content */}
               <div className="p-6 space-y-4">
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Apakah Anda ingin memasang aplikasi <strong>PanganKu</strong> di perangkat Anda? Aplikasi sangat ringan, hemat baterai, dan berjalan sepenuhnya <strong>tanpa koneksi internet (offline)</strong>.
+                <p className="text-xs text-gray-650 leading-relaxed">
+                  Apakah Anda ingin memasang aplikasi <strong>PanganKu</strong> di perangkat Anda? Aplikasi ini sangat ringan, hemat baterai, dan berjalan sepenuhnya <strong>offline (tanpa internet)</strong>.
                 </p>
+
+                {/* Iframe Detection & Warning */}
+                {typeof window !== 'undefined' && window.self !== window.top ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2.5 text-amber-900">
+                    <p className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1">
+                      ⚠️ Batasan Pratinjau Browser (Iframe)
+                    </p>
+                    <p className="text-[10.5px] leading-relaxed text-gray-700">
+                      Browser Anda memblokir pemicu instalasi PWA asli ke Windows/Android karena aplikasi ini sedang dibuka di dalam <strong>panel pratinjau (iframe)</strong>.
+                    </p>
+                    <a
+                      href={window.location.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-center items-center justify-center gap-2 transition-all shadow-md text-[11px] uppercase tracking-wider"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Buka Di Tab Baru (Pasang Asli)</span>
+                    </a>
+                    <p className="text-[9px] text-gray-500 italic mt-1 text-center">
+                      *Setelah di tab baru, klik tombol <strong>"Pasang"</strong> atau klik ikon instalasi di bar alamat browser Anda agar terdaftar di sistem Windows/Android (dapat dicari di Search Menu).
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-emerald-990 font-medium">
+                    ✨ Browser Anda mendukung instalasi langsung! Ikon aplikasi akan didaftarkan ke sistem OS Anda secara resmi.
+                  </div>
+                )}
 
                 {/* Simulated / Genuine Action Buttons */}
                 <div className="pt-2 grid grid-cols-2 gap-3">
@@ -651,7 +679,7 @@ export default function App() {
                         // Simulated installation fallback
                         setIsPwaInstalled(true);
                         localStorage.setItem('panganku_installed', 'true');
-                        alert("🎉 Aplikasi PanganKu Berhasil Terpasang di Ponsel/Desktop Anda!\n\nIkon pintasan instan PanganKu kini sudah ditambahkan ke layar perangkat Anda, siap digunakan secara offline tanpa kuota internet.");
+                        alert("🎉 Pemasangan Disandikan!\n\nAplikasi PanganKu berhasil meregistrasikan service worker & manifest. Jika Anda berada di tab baru, browser Chrome/Edge Anda akan memunculkan dialog konfirmasi sistem untuk mendaftarkannya ke komputer/ponsel Anda.");
                       }
                       setShowInstallGuide(false);
                     }}
