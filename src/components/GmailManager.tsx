@@ -15,6 +15,8 @@ import {
   Inbox
 } from 'lucide-react';
 
+import { TRANSLATIONS } from '../translations';
+
 interface GmailMessage {
   id: string;
   threadId: string;
@@ -27,9 +29,11 @@ interface GmailMessage {
 interface GmailManagerProps {
   googleAccessToken: string | null;
   loginWithGoogle: () => Promise<string | null>;
+  currentLanguage?: 'ID' | 'EN';
 }
 
-export default function GmailManager({ googleAccessToken, loginWithGoogle }: GmailManagerProps) {
+export default function GmailManager({ googleAccessToken, loginWithGoogle, currentLanguage = 'ID' }: GmailManagerProps) {
+  const t = TRANSLATIONS[currentLanguage];
   const [messages, setMessages] = useState<GmailMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

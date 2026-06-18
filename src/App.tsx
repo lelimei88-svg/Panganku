@@ -669,9 +669,9 @@ export default function App() {
                     <Smartphone className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-headline font-black text-lg tracking-tight">Pasang Aplikasi</h3>
+                    <h3 className="font-headline font-black text-lg tracking-tight">{t.pwa_guide_title}</h3>
                     <p className="text-lime-300 text-[10px] tracking-wider uppercase font-extrabold flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 animate-pulse" /> PANGAN-KU PWA
+                      <Sparkles className="w-3 h-3 animate-pulse" /> {t.pwa_guide_subtitle}
                     </p>
                   </div>
                 </div>
@@ -679,18 +679,18 @@ export default function App() {
 
               {/* Minimal Content */}
               <div className="p-6 space-y-4">
-                <p className="text-xs text-gray-650 leading-relaxed">
-                  Apakah Anda ingin memasang aplikasi <strong>PanganKu</strong> di perangkat Anda? Aplikasi ini sangat ringan, hemat baterai, dan berjalan sepenuhnya <strong>offline (tanpa internet)</strong>.
+                <p className="text-xs text-gray-655 leading-relaxed">
+                  {t.pwa_guide_desc}
                 </p>
 
                 {/* Iframe Detection & Warning */}
                 {typeof window !== 'undefined' && window.self !== window.top ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2.5 text-amber-900">
                     <p className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1">
-                      ⚠️ Batasan Pratinjau Browser (Iframe)
+                      {t.pwa_iframe_title}
                     </p>
                     <p className="text-[10.5px] leading-relaxed text-gray-700">
-                      Browser Anda memblokir pemicu instalasi PWA asli ke Windows/Android karena aplikasi ini sedang dibuka di dalam <strong>panel pratinjau (iframe)</strong>.
+                      {t.pwa_iframe_desc}
                     </p>
                     <a
                       href={window.location.href}
@@ -699,31 +699,31 @@ export default function App() {
                       className="inline-flex w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-center items-center justify-center gap-2 transition-all shadow-md text-[11px] uppercase tracking-wider"
                     >
                       <Share2 className="w-3.5 h-3.5" />
-                      <span>Buka Di Tab Baru (Pasang Asli)</span>
+                      <span>{t.pwa_iframe_btn}</span>
                     </a>
                     <p className="text-[9px] text-gray-500 italic mt-1 text-center">
-                      *Setelah di tab baru, klik tombol <strong>"Pasang"</strong> atau klik ikon instalasi di bar alamat browser Anda agar terdaftar di sistem Windows/Android (dapat dicari di Search Menu).
+                      {t.pwa_iframe_disclaimer}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2.5">
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-emerald-900 font-medium">
-                      ✨ Browser Anda mendeteksi PanganKu siap diinstal & berjalan luring secara penuh!
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-emerald-900 font-medium text-xs">
+                      {t.pwa_ready_status}
                     </div>
                     {!deferredPrompt && (
                       <div className="bg-lime-50 border border-lime-200 rounded-2xl p-3.5 text-lime-950 space-y-2">
                         <p className="text-[11px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
-                          💡 Cara Memunculkan PanganKu di Windows Search:
+                          {t.pwa_not_detected_title}
                         </p>
                         <p className="text-[10.5px] text-gray-700 leading-relaxed">
-                          Agar aplikasi terdaftar resmi di menu aplikasi sistem Windows Anda (seperti pada screenshot pencarian Windows Anda), silakan klik tombol <strong className="text-emerald-700 font-extrabold uppercase">"Hubungkan / Instal"</strong> di bar browser Anda:
+                          {t.pwa_not_detected_desc}
                         </p>
                         <ul className="list-disc pl-4 text-[10px] text-gray-600 space-y-1">
-                          <li><strong>Metode 1:</strong> Ketuk ikon <strong className="text-emerald-700">⊕ (Instal / Monitor Plus)</strong> di sisi kanan bilah alamat (URL bar) browser Chrome/Edge Anda.</li>
-                          <li><strong>Metode 2:</strong> Klik menu <strong>tiga titik (⋮)</strong> di sebelah kanan atas browser, kemudian pilih opsi <strong className="text-emerald-700">"Instal PanganKu"</strong>.</li>
+                          <li>{t.pwa_not_detected_method1}</li>
+                          <li>{t.pwa_not_detected_method2}</li>
                         </ul>
                         <p className="text-[9px] text-gray-500 italic">
-                          *Setelah Anda mengeklik salah satu di atas, Windows akan mendaftarkan pintasan aplikasi secara resmi ke Windows Search Menu & Desktop.
+                          {t.pwa_not_detected_disclaimer}
                         </p>
                       </div>
                     )}
@@ -736,7 +736,7 @@ export default function App() {
                     onClick={() => setShowInstallGuide(false)}
                     className="w-full py-2.5 bg-gray-100 hover:bg-gray-250 text-gray-700 font-extrabold rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider text-center"
                   >
-                    Batal
+                    {t.pwa_action_cancel}
                   </button>
                   <button 
                     onClick={() => {
@@ -754,14 +754,17 @@ export default function App() {
                         // Simulated installation fallback
                         setIsPwaInstalled(true);
                         localStorage.setItem('panganku_installed', 'true');
-                        alert("🎉 Pemasangan Disandikan!\n\nAplikasi PanganKu berhasil meregistrasikan service worker & manifest. Jika Anda berada di tab baru, browser Chrome/Edge Anda akan memunculkan dialog konfirmasi sistem untuk mendaftarkannya ke komputer/ponsel Anda.");
+                        alert(currentLanguage === 'ID' 
+                          ? "🎉 Pemasangan Disandikan!\n\nAplikasi PanganKu berhasil meregistrasikan service worker & manifest. Jika Anda berada di tab baru, browser Chrome/Edge Anda akan memunculkan dialog konfirmasi sistem untuk mendaftarkannya ke komputer/ponsel Anda."
+                          : "🎉 Installation Registered!\n\nPanganKu app successfully registered the service worker & manifest. If you are on a fresh tab, your Chrome/Edge browser will present a native system confirmation overlay to add this key shortcut onto your desktop."
+                        );
                       }
                       setShowInstallGuide(false);
                     }}
                     className="w-full py-2.5 bg-[#FF6B35] hover:bg-[#e25a28] text-white font-black rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider text-center flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/15"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Pasang</span>
+                    <span>{t.pwa_action_install}</span>
                   </button>
                 </div>
               </div>
@@ -840,6 +843,7 @@ export default function App() {
               onNavigateToAdmin={() => setActiveView('admin')}
               googleAccessToken={googleAccessToken}
               loginWithGoogle={loginWithGoogle}
+              currentLanguage={currentLanguage}
             />
           )}
 
@@ -850,6 +854,7 @@ export default function App() {
               onNavigateToCatalog={() => setActiveView('catalog')}
               googleAccessToken={googleAccessToken}
               loginWithGoogle={loginWithGoogle}
+              currentLanguage={currentLanguage}
             />
           )}
 

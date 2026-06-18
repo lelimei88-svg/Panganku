@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, CartItem } from '../types';
 import { INITIAL_PRODUCTS } from '../data';
-import { TRANSLATIONS } from '../translations';
+import { TRANSLATIONS, TRANSLATE_PRODUCT_METADATA, TRANSLATE_CATEGORY_NAMES } from '../translations';
 import { 
   ShoppingBag, 
   Search, 
@@ -53,8 +53,33 @@ export default function CatalogView({
   const [isLoading, setIsLoading] = useState(false);
   const [addedPopup, setAddedPopup] = useState<string | null>(null);
 
+  // Helper inside loop to get translated product fields dynamically
+  const getProductMeta = (item: Product) => {
+    const meta = TRANSLATE_PRODUCT_METADATA[currentLanguage]?.[item.id as keyof typeof TRANSLATE_PRODUCT_METADATA['ID']];
+    return {
+      name: meta?.name || item.name,
+      unit: meta?.unit || item.unit,
+      description: meta?.description || item.description
+    };
+  };
+
+  const formatPrice = (price: number) => {
+    return 'Rp ' + price.toLocaleString(currentLanguage === 'ID' ? 'id-ID' : 'en-US');
+  };
+
   // Filter products
-  const mainBahanPokok = INITIAL_PRODUCTS.filter(p => p.category === 'pokok');
+  const rawMainBahanPokok = INITIAL_PRODUCTS.filter(p => p.category === 'pokok');
+  // Enhance main staples with translations
+  const mainBahanPokok = rawMainBahanPokok.map(item => {
+    const meta = getProductMeta(item);
+    return {
+      ...item,
+      name: meta.name,
+      unit: meta.unit,
+      description: meta.description
+    };
+  });
+
   const [filteredSupporting, setFilteredSupporting] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -65,20 +90,34 @@ export default function CatalogView({
         ? supporting 
         : supporting.filter(p => p.category === selectedCategory);
       
-      const searchFilter = categoryFilter.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const searchFilter = categoryFilter.filter(p => {
+        const meta = TRANSLATE_PRODUCT_METADATA[currentLanguage]?.[p.id as keyof typeof TRANSLATE_PRODUCT_METADATA['ID']];
+        const pName = meta?.name || p.name;
+        return pName.toLowerCase().includes(searchQuery.toLowerCase());
+      });
       
-      setFilteredSupporting(searchFilter);
+      // Translate the supporting products
+      const translatedSupporting = searchFilter.map(item => {
+        const meta = getProductMeta(item);
+        return {
+          ...item,
+          name: meta.name,
+          unit: meta.unit,
+          description: meta.description
+        };
+      });
+
+      setFilteredSupporting(translatedSupporting);
       setIsLoading(false);
     }, 450); // Cool TanStack-like query cache simulation speed
 
     return () => clearTimeout(timer);
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, currentLanguage]);
 
   const handleAddToCartWithFeedback = (product: Product) => {
     onAddToCart(product);
-    setAddedPopup(product.name);
+    const meta = getProductMeta(product);
+    setAddedPopup(meta.name);
     setTimeout(() => {
       setAddedPopup(null);
     }, 2000);
@@ -252,11 +291,11 @@ export default function CatalogView({
                     
                     <div className="flex items-center gap-3 mb-2">
                       <span className="font-headline text-xl md:text-2xl font-black text-primary">
-                        Rp {mainBahanPokok[0].price.toLocaleString('id-ID')}
+                        {formatPrice(mainBahanPokok[0].price)}
                       </span>
                       {mainBahanPokok[0].originalPrice && (
                         <span className="text-gray-400 line-through text-xs font-semibold">
-                          Rp {mainBahanPokok[0].originalPrice.toLocaleString('id-ID')}
+                          {formatPrice(mainBahanPokok[0].originalPrice)}
                         </span>
                       )}
                     </div>
@@ -305,7 +344,7 @@ export default function CatalogView({
 
                     <div className="mt-4 pt-3 border-t border-gray-50 flex flex-col gap-2">
                       <span className="text-primary font-extrabold text-base md:text-lg">
-                        Rp {item.price.toLocaleString('id-ID')}
+                        {formatPrice(item.price)}
                       </span>
                       <button 
                         onClick={() => handleAddToCartWithFeedback(item)}
@@ -388,46 +427,53 @@ export default function CatalogView({
                         <p className="text-xs text-gray-300">{t.search_helper}</p>
                       </div>
                     ) : (
-                      filteredSupporting.map((product) => (
-                        <div 
-                          key={product.id}
-                          className="group bg-white rounded-2xl border border-gray-100 p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-                        >
-                          <div>
-                            <div className="h-32 mb-3 overflow-hidden rounded-xl bg-gray-50 relative">
-                              <img 
-                                src={product.image} 
-                                alt={product.name}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                              />
-                              <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-[2px] text-primary text-[10px] font-bold px-2 py-0.5 rounded">
-                                {product.unit}
+                      filteredSupporting.map((product) => {
+                        const meta = getProductMeta(product);
+                        const displayCategoryName = TRANSLATE_CATEGORY_NAMES[currentLanguage]?.[product.category as keyof typeof TRANSLATE_CATEGORY_NAMES['ID']] || product.category;
+                        return (
+                          <div 
+                            key={product.id}
+                            className="group bg-white rounded-2xl border border-gray-100 p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+                          >
+                            <div>
+                              <div className="h-32 mb-3 overflow-hidden rounded-xl bg-gray-50 relative">
+                                <img 
+                                  src={product.image} 
+                                  alt={meta.name}
+                                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                />
+                                <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-[2px] text-primary text-[10px] font-bold px-2 py-0.5 rounded">
+                                  {meta.unit}
+                                </span>
+                              </div>
+                              <span className="text-[9px] font-semibold text-gray-400 tracking-wider block mb-1 uppercase">
+                                {displayCategoryName}
                               </span>
+                              <h4 className="font-headline text-xs md:text-sm font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
+                                {meta.name}
+                              </h4>
+                              <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+                                {meta.description}
+                              </p>
                             </div>
-                            <h4 className="font-headline text-xs md:text-sm font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
-                              {product.name}
-                            </h4>
-                            <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
-                              {product.description}
-                            </p>
-                          </div>
 
-                          <div className="mt-4 pt-2 border-t border-gray-50">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-primary font-extrabold text-sm md:text-base">
-                                Rp {product.price.toLocaleString('id-ID')}
-                              </span>
+                            <div className="mt-4 pt-2 border-t border-gray-50">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-primary font-extrabold text-sm md:text-base">
+                                  {formatPrice(product.price)}
+                                </span>
+                              </div>
+                              <button 
+                                onClick={() => handleAddToCartWithFeedback(product)}
+                                className="w-full border border-gray-200 text-gray-600 hover:bg-primary hover:text-white hover:border-transparent py-1.5 rounded-lg font-bold text-xs transition-all active:scale-95 cursor-pointer"
+                                id={`add-badge-${product.id}`}
+                              >
+                                {t.cat_add}
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => handleAddToCartWithFeedback(product)}
-                              className="w-full border border-gray-200 text-gray-600 hover:bg-primary hover:text-white hover:border-transparent py-1.5 rounded-lg font-bold text-xs transition-all active:scale-95 cursor-pointer"
-                              id={`add-badge-${product.id}`}
-                            >
-                              {t.cat_add}
-                            </button>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </motion.div>
                 )}
@@ -560,55 +606,58 @@ export default function CatalogView({
                     <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
                       {currentLanguage === 'ID' ? `Detail Barang Pesanan (${cartItems.length})` : `Order Item Details (${cartItems.length})`}
                     </p>
-                    {cartItems.map((item) => (
-                      <div 
-                        key={item.product.id} 
-                        className="flex gap-3 pb-3.5 border-b border-gray-100 items-start hover:bg-gray-50/50 p-1.5 rounded-xl transition-all"
-                      >
-                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
-                          <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-xs text-gray-900 truncate leading-snug">{item.product.name}</h4>
-                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{item.product.description}</p>
-                          <p className="text-xs font-extrabold text-primary mt-1.5">
-                            Rp {item.product.price.toLocaleString('id-ID')} <span className="text-[9px] text-gray-400 font-normal font-sans">/ {item.product.unit}</span>
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2.5 shrink-0">
-                          {/* Quantity control */}
-                          <div className="flex items-center gap-1 border border-gray-250 rounded-lg p-0.5 bg-white shadow-xs scale-90 origin-right">
+                    {cartItems.map((item) => {
+                      const meta = getProductMeta(item.product);
+                      return (
+                        <div 
+                          key={item.product.id} 
+                          className="flex gap-3 pb-3.5 border-b border-gray-100 items-start hover:bg-gray-50/50 p-1.5 rounded-xl transition-all"
+                        >
+                          <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
+                            <img src={item.product.image} alt={meta.name} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-xs text-gray-900 truncate leading-snug">{meta.name}</h4>
+                            <p className="text-[10px] text-gray-500 truncate mt-0.5">{meta.description}</p>
+                            <p className="text-xs font-extrabold text-primary mt-1.5">
+                              {formatPrice(item.product.price)} <span className="text-[9px] text-gray-400 font-normal font-sans">/ {meta.unit}</span>
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2.5 shrink-0">
+                            {/* Quantity control */}
+                            <div className="flex items-center gap-1 border border-gray-250 rounded-lg p-0.5 bg-white shadow-xs scale-90 origin-right">
+                              <button 
+                                onClick={() => {
+                                  if (item.quantity > 1) {
+                                    onUpdateQuantity(item.product.id, item.quantity - 1);
+                                  } else {
+                                    onRemoveItem(item.product.id);
+                                  }
+                                }}
+                                className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all rounded-md cursor-pointer"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="w-5 text-center text-xs font-black text-gray-900">{item.quantity}</span>
+                              <button 
+                                onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+                                className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-primary hover:bg-emerald-50 transition-all rounded-md cursor-pointer"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            {/* trash button */}
                             <button 
-                              onClick={() => {
-                                if (item.quantity > 1) {
-                                  onUpdateQuantity(item.product.id, item.quantity - 1);
-                                } else {
-                                  onRemoveItem(item.product.id);
-                                }
-                              }}
-                              className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all rounded-md cursor-pointer"
+                              onClick={() => onRemoveItem(item.product.id)}
+                              className="text-gray-450 hover:text-red-655 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title={currentLanguage === 'ID' ? "Hapus item" : "Remove item"}
                             >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="w-5 text-center text-xs font-black text-gray-900">{item.quantity}</span>
-                            <button 
-                              onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
-                              className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-primary hover:bg-emerald-50 transition-all rounded-md cursor-pointer"
-                            >
-                              <Plus className="w-3 h-3" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          {/* trash button */}
-                          <button 
-                            onClick={() => onRemoveItem(item.product.id)}
-                            className="text-gray-450 hover:text-red-650 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title={currentLanguage === 'ID' ? "Hapus item" : "Remove item"}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -623,14 +672,14 @@ export default function CatalogView({
                     </div>
                     <div className="flex justify-between items-center text-xs text-gray-500">
                       <span>{t.cart_total_qty}</span>
-                      <span className="font-extrabold text-gray-900">
+                      <span className="font-extrabold text-[#031505]">
                         {cartItems.reduce((acc, item) => acc + item.quantity, 0)} Pcs
                       </span>
                     </div>
                     <div className="flex justify-between items-end pt-2 border-t border-dashed border-gray-200">
                       <span className="font-bold text-xs text-gray-800">{t.cart_subtotal}</span>
                       <span className="font-black text-primary text-base md:text-lg">
-                        Rp {cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString('id-ID')}
+                        {formatPrice(cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0))}
                       </span>
                     </div>
                   </div>

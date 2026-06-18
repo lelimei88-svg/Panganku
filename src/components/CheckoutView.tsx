@@ -20,6 +20,7 @@ import {
   Send
 } from 'lucide-react';
 import { Product, CartItem, Order } from '../types';
+import { TRANSLATIONS, TRANSLATE_PRODUCT_METADATA } from '../translations';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface CheckoutViewProps {
@@ -32,6 +33,7 @@ interface CheckoutViewProps {
   onNavigateToAdmin: () => void;
   googleAccessToken?: string | null;
   loginWithGoogle?: () => Promise<string | null>;
+  currentLanguage?: 'ID' | 'EN';
 }
 
 export default function CheckoutView({
@@ -43,8 +45,11 @@ export default function CheckoutView({
   onAddNewOrder,
   onNavigateToAdmin,
   googleAccessToken,
-  loginWithGoogle
+  loginWithGoogle,
+  currentLanguage = 'ID'
 }: CheckoutViewProps) {
+  const t = TRANSLATIONS[currentLanguage];
+
   // Forms state
   const [recipientName, setRecipientName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -83,9 +88,27 @@ export default function CheckoutView({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatPrice = (price: number) => {
+    return 'Rp ' + price.toLocaleString(currentLanguage === 'ID' ? 'id-ID' : 'en-US');
+  };
+
+  // Translate the cartItems list to reflect the current language dynamically
+  const translatedCartItems = cartItems.map(item => {
+    const meta = TRANSLATE_PRODUCT_METADATA[currentLanguage]?.[item.product.id as keyof typeof TRANSLATE_PRODUCT_METADATA['ID']];
+    return {
+      ...item,
+      product: {
+        ...item.product,
+        name: meta?.name || item.product.name,
+        unit: meta?.unit || item.product.unit,
+        description: meta?.description || item.product.description
+      }
+    };
+  });
+
   // Calculations
   const calculateSubtotal = () => {
-    return cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+    return translatedCartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
   };
 
   const subtotal = calculateSubtotal();
@@ -121,19 +144,19 @@ export default function CheckoutView({
     if (subtotal < 75000) {
       const remaining = 75000 - subtotal;
       return {
-        text: `Butuh Rp ${remaining.toLocaleString('id-ID')} lagi`,
-        nextTier: 'Rp 75k (Hemat 7.5k)'
+        text: currentLanguage === 'ID' ? `Butuh Rp ${remaining.toLocaleString('id-ID')} lagi` : `Need ${formatPrice(remaining)} more`,
+        nextTier: currentLanguage === 'ID' ? 'Rp 75k (Hemat 7.5k)' : 'Rp 75k (Save 7.5k)'
       };
     } else if (subtotal < 150000) {
       const remaining = 150000 - subtotal;
       return {
-        text: `Butuh Rp ${remaining.toLocaleString('id-ID')} lagi`,
-        nextTier: 'Rp 150k (Hemat 20k)'
+        text: currentLanguage === 'ID' ? `Butuh Rp ${remaining.toLocaleString('id-ID')} lagi` : `Need ${formatPrice(remaining)} more`,
+        nextTier: currentLanguage === 'ID' ? 'Rp 150k (Hemat 20k)' : 'Rp 150k (Save 20k)'
       };
     }
     return {
-      text: '🥳 Selamat! Anda mendapat diskon maksimal!',
-      nextTier: 'Tier Maksimal Unlocked'
+      text: t.chk_disc_max_unlocked,
+      nextTier: t.chk_disc_max_unstuff
     };
   };
 
@@ -142,10 +165,10 @@ export default function CheckoutView({
   // Validate form
   const validateForm = () => {
     const tempErrors: { [key: string]: string } = {};
-    if (!recipientName.trim()) tempErrors.name = 'Nama penerima wajib diisi';
-    if (!phoneNumber.trim()) tempErrors.phone = 'Nomor telepon wajib diisi';
-    if (!address.trim()) tempErrors.address = 'Alamat lengkap wajib diisi';
-    if (cartItems.length === 0) tempErrors.cart = 'Keranjang belanja Anda kosong';
+    if (!recipientName.trim()) tempErrors.name = t.chk_form_err_name;
+    if (!phoneNumber.trim()) tempErrors.phone = t.chk_form_err_phone;
+    if (!address.trim()) tempErrors.address = t.chk_form_err_address;
+    if (translatedCartItems.length === 0) tempErrors.cart = t.chk_form_err_cart;
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -164,7 +187,7 @@ export default function CheckoutView({
         clientName: recipientName,
         phoneNumber: phoneNumber,
         address: address,
-        items: cartItems.map(item => ({
+        items: translatedCartItems.map(item => ({
           productName: item.product.name,
           quantity: item.quantity,
           price: item.product.price
@@ -190,52 +213,55 @@ export default function CheckoutView({
   const handleSendInvoiceEmail = async () => {
     if (!orderCompleted || !googleAccessToken) return;
     if (!targetEmail.trim()) {
-      alert('Tolong masukkan email tujuan.');
+      alert(currentLanguage === 'ID' ? 'Tolong masukkan email tujuan.' : 'Please enter target email address.');
       return;
     }
 
     // MANDATORY USER CONFIRMATION per Workspace SKILL instructions!
-    const confirmed = window.confirm(`Kirim detail invoice ke email ${targetEmail}?`);
+    const confirmPrompt = currentLanguage === 'ID' 
+      ? `Kirim detail invoice ke email ${targetEmail}?` 
+      : `Send invoice details to email ${targetEmail}?`;
+    const confirmed = window.confirm(confirmPrompt);
     if (!confirmed) return;
 
     setEmailSending(true);
     setEmailSent(false);
 
     try {
-      const subject = `[PanganKu] Konfirmasi & Invoice Pesanan ${orderCompleted.id}`;
+      const subject = `[PanganKu] ${currentLanguage === 'ID' ? 'Konfirmasi & Invoice Pesanan' : 'Order Invoice & Confirmation'} ${orderCompleted.id}`;
       const itemsListHtml = orderCompleted.items.map(item => 
-        `<li><strong>${item.productName}</strong> x${item.quantity} (Rp ${item.price.toLocaleString('id-ID')})</li>`
+        `<li><strong>${item.productName}</strong> x${item.quantity} (${formatPrice(item.price)})</li>`
       ).join('');
 
       const bodyHtml = `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e1e8ed; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
           <div style="background-color: #052f0c; color: white; padding: 24px; text-align: center;">
             <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">PanganKu</h1>
-            <p style="margin: 4px 0 0 0; font-size: 12px; color: #fe6a34; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Invoice Pemesanan Sukses</p>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #fe6a34; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">${currentLanguage === 'ID' ? 'Invoice Pemesanan Sukses' : 'Order Invoice Successful'}</p>
           </div>
           <div style="padding: 24px; color: #2c3e50; line-height: 1.6;">
-            <h2 style="font-size: 18px; color: #052f0c; margin-top: 0;">Halo ${orderCompleted.clientName},</h2>
-            <p>Terima kasih telah berbelanja pertanian organik & segar di PanganKu! Pesanan Anda telah diterima sistem logistik kami.</p>
+            <h2 style="font-size: 18px; color: #052f0c; margin-top: 0;">${currentLanguage === 'ID' ? 'Halo' : 'Hello'} ${orderCompleted.clientName},</h2>
+            <p>${currentLanguage === 'ID' ? 'Terima kasih telah berbelanja pertanian organik & segar di PanganKu! Pesanan Anda telah diterima sistem logistik kami.' : 'Thank you for shopping farm-fresh organic products on PanganKu! Your order has been admitted to our logistics core pipeline.'}</p>
             
             <div style="background-color: #f8f9fa; border-left: 4px solid #fe6a34; padding: 16px; border-radius: 4px; margin: 20px 0;">
-              <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">Ringkasan Pesanan:</p>
+              <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">${currentLanguage === 'ID' ? 'Ringkasan Pesanan:' : 'Order Summary:'}</p>
               <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
                 ${itemsListHtml}
               </ul>
               <hr style="border: 0; border-top: 1px solid #e1e8ed; margin: 12px 0;" />
               <table style="width: 100%; font-size: 13px;">
-                <tr><td>Subtotal:</td><td style="text-align: right; font-weight: bold;">Rp ${orderCompleted.subtotal.toLocaleString('id-ID')}</td></tr>
-                <tr><td>Diskon Hemat:</td><td style="text-align: right; color: #fe6a34; font-weight: bold;">-Rp ${orderCompleted.discount.toLocaleString('id-ID')}</td></tr>
-                <tr><td>Ongkos Kirim:</td><td style="text-align: right; font-weight: bold;">Rp ${orderCompleted.shipping.toLocaleString('id-ID')}</td></tr>
+                <tr><td>Subtotal:</td><td style="text-align: right; font-weight: bold;">${formatPrice(orderCompleted.subtotal)}</td></tr>
+                <tr><td>${currentLanguage === 'ID' ? 'Diskon Hemat' : 'Benefit Discount'}:</td><td style="text-align: right; color: #fe6a34; font-weight: bold;">-${formatPrice(orderCompleted.discount)}</td></tr>
+                <tr><td>${currentLanguage === 'ID' ? 'Ongkos Kirim' : 'Freight Shipping'}:</td><td style="text-align: right; font-weight: bold;">${formatPrice(orderCompleted.shipping)}</td></tr>
                 <tr style="font-size: 15px; font-weight: bold; color: #052f0c;">
-                  <td>Total Bayar:</td>
-                  <td style="text-align: right;">Rp ${orderCompleted.total.toLocaleString('id-ID')}</td>
+                  <td>${currentLanguage === 'ID' ? 'Total Bayar' : 'Aggregated Total'}:</td>
+                  <td style="text-align: right;">${formatPrice(orderCompleted.total)}</td>
                 </tr>
               </table>
             </div>
 
-            <p style="font-size: 13px;"><strong>Alamat Pengiriman:</strong><br />${orderCompleted.address}</p>
-            <p style="font-size: 13px;"><strong>Metode Pembayaran:</strong> ${orderCompleted.paymentMethod === 'cod' ? 'Bayar di Tempat (COD)' : 'QRIS Digital Auto'}</p>
+            <p style="font-size: 13px;"><strong>${currentLanguage === 'ID' ? 'Alamat Pengiriman:' : 'Delivery Address:'}</strong><br />${orderCompleted.address}</p>
+            <p style="font-size: 13px;"><strong>${currentLanguage === 'ID' ? 'Metode Pembayaran' : 'Payment Route'}:</strong> ${orderCompleted.paymentMethod === 'cod' ? (currentLanguage === 'ID' ? 'Bayar di Tempat (COD)' : 'Cash On Delivery (COD)') : 'QRIS Digital'}</p>
             
             <hr style="border: 0; border-top: 1px solid #e1e8ed; margin: 24px 0;" />
             <p style="font-size: 11px; color: #7f8c8d; text-align: center; margin: 0;">PanganKu Fresh Supply Chain - Securely Transacted via Google API © 2026</p>
@@ -277,7 +303,7 @@ export default function CheckoutView({
       setEmailSent(true);
     } catch (err: any) {
       console.error('Failed to send invoice email:', err);
-      alert(`Gagal mengirim invoice email: ${err.message || 'Unknown network error'}`);
+      alert(currentLanguage === 'ID' ? `Gagal mengirim invoice email: ${err.message || 'Error jaringan tidak dikenal'}` : `Failed to dispatch invoice: ${err.message || 'Unknown Network Error'}`);
     } finally {
       setEmailSending(false);
     }
@@ -297,21 +323,21 @@ export default function CheckoutView({
       <header className="fixed top-0 left-0 w-full z-45 bg-white border-b border-gray-100 shadow-xs h-16 flex items-center justify-between px-4 md:px-12">
         <button 
           onClick={onNavigateToCatalog}
-          className="flex items-center gap-2 text-primary hover:text-secondary font-bold text-xs md:text-sm tracking-wider uppercase transition-colors uppercase group cursor-pointer"
+          className="flex items-center gap-2 text-primary hover:text-secondary font-bold text-xs md:text-sm tracking-wider uppercase transition-colors group cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          <span>Kembali</span>
+          <span>{t.chk_header_back}</span>
         </button>
 
         <div className="absolute left-1/2 -translate-x-1/2">
-          <h1 className="font-headline text-lg md:text-xl font-black text-primary tracking-tight md:block">
-            Checkout <span className="text-secondary">Aman</span>
+          <h1 className="font-headline text-lg md:text-xl font-black text-primary tracking-tight">
+            Checkout <span className="text-secondary">{t.nav_enterprise}</span>
           </h1>
         </div>
 
         <div className="flex items-center gap-2 text-primary">
           <ShieldAlert className="w-5 h-5 text-accent fill-accent/10" />
-          <span className="hidden sm:inline font-bold text-xs tracking-wider uppercase">Secure Encription Connected</span>
+          <span className="hidden sm:inline font-bold text-[10px] tracking-wider uppercase">{t.chk_header_desc}</span>
         </div>
       </header>
 
@@ -330,8 +356,8 @@ export default function CheckoutView({
             </div>
             
             <div className="space-y-2">
-              <h2 className="font-headline text-3xl font-black text-primary">Pesanan Sukses Dibuat!</h2>
-              <p className="text-gray-500 text-sm">Terima kasih atas order Anda. ID Pesanan Anda adalah:</p>
+              <h2 className="font-headline text-2xl md:text-3xl font-black text-primary">{t.chk_success_title}</h2>
+              <p className="text-gray-500 text-sm">{t.chk_success_subtitle}</p>
               <div className="inline-block px-4 py-2 bg-emerald-50 text-primary rounded-xl font-mono font-bold text-lg border border-emerald-100">
                 {orderCompleted.id}
               </div>
@@ -339,31 +365,31 @@ export default function CheckoutView({
 
             <div className="bg-gray-50 rounded-xl p-5 text-left text-xs space-y-3 border border-gray-100">
               <div className="flex justify-between font-bold text-primary border-b border-gray-100 pb-2">
-                <span>Rincian Penerima</span>
+                <span>{t.chk_success_card_title}</span>
                 <span>PanganKu Secure</span>
               </div>
-              <p><strong>Penerima:</strong> {orderCompleted.clientName}</p>
-              <p><strong>Alamat:</strong> {orderCompleted.address}</p>
-              <p><strong>Metode Pembayaran:</strong> {orderCompleted.paymentMethod === 'cod' ? 'Cash On Delivery (COD)' : 'QRIS Digital'}</p>
-              <p className="text-[10px] text-gray-400 font-mono"><strong>CSRF Security Hash:</strong> {orderCompleted.csrfToken}</p>
+              <p><strong>{t.chk_success_recipient}</strong> {orderCompleted.clientName}</p>
+              <p><strong>{t.chk_success_address}</strong> {orderCompleted.address}</p>
+              <p><strong>{t.chk_success_payment}</strong> {orderCompleted.paymentMethod === 'cod' ? (currentLanguage === 'ID' ? 'Bayar di Tempat (COD)' : 'Cash On Delivery (COD)') : 'QRIS Digital'}</p>
+              <p className="text-[10px] text-gray-400 font-mono"><strong>{t.chk_success_csrf}</strong> {orderCompleted.csrfToken}</p>
             </div>
 
             {/* Gmail Invoice Integration Block */}
             <div className="bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100 text-left space-y-4">
               <div className="flex items-center gap-2 text-primary border-b border-emerald-100 pb-2">
                 <Mail className="w-4.5 h-4.5 text-secondary" />
-                <span className="font-headline text-sm font-extrabold">Kirim Invoice Resmi via Gmail API</span>
+                <span className="font-headline text-sm font-extrabold">{t.chk_success_gmail_title}</span>
               </div>
 
               {emailSent ? (
-                <div className="p-3.5 bg-emerald-100 border border-emerald-200 text-primary rounded-xl text-xs font-bold flex items-center gap-2">
-                  <CheckCircle className="w-4 w-4 text-primary shrink-0" />
-                  <span>Invoice & Konfirmasi Pesanan resmi berhasil dikirim langsung dari server Gmail Anda!</span>
+                <div className="p-3.5 bg-emerald-100 border border-emerald-200 text-primary rounded-xl text-xs font-bold flex items-center gap-2 animate-fadeIn">
+                  <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                  <span>{t.chk_success_gmail_sent}</span>
                 </div>
               ) : !googleAccessToken ? (
                 <div className="space-y-3">
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    Masuk menggunakan Google Workspace untuk mengirim invoice konfirmasi resmi ini secara otomatis ke kotak masuk email Anda sekarang.
+                    {t.chk_success_gmail_oauth}
                   </p>
                   <button 
                     type="button"
@@ -376,18 +402,18 @@ export default function CheckoutView({
                       <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
                       <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
                     </svg>
-                    <span>Hubungkan Akun Gmail</span>
+                    <span>{t.profile_login}</span>
                   </button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    Masukkan alamat email tujuan untuk mengirimkan tanda terima transaksi logistik premium secara real-time.
+                    {t.chk_success_gmail_ready_desc}
                   </p>
                   <div className="flex gap-2">
                     <input 
                       type="email" 
-                      placeholder="nama@email.com"
+                      placeholder={t.chk_success_gmail_placeholder}
                       value={targetEmail}
                       onChange={(e) => setTargetEmail(e.target.value)}
                       className="flex-grow px-3.5 py-2 border border-gray-200 bg-white rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-secondary focus:border-transparent transition-all"
@@ -401,12 +427,12 @@ export default function CheckoutView({
                       {emailSending ? (
                         <>
                           <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          <span>Mengirim...</span>
+                          <span>{t.chk_success_gmail_sending}</span>
                         </>
                       ) : (
                         <>
                           <Send className="w-3.5 h-3.5" />
-                          <span>Kirim</span>
+                          <span>{t.chk_success_gmail_send_btn}</span>
                         </>
                       )}
                     </button>
@@ -420,23 +446,22 @@ export default function CheckoutView({
                 onClick={onNavigateToCatalog}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3.5 rounded-xl font-bold transition-all text-sm cursor-pointer"
               >
-                Belanja Bahan Lain
+                {t.chk_success_back_btn}
               </button>
               <button 
                 onClick={() => {
                   setOrderCompleted(null);
-                  // Dynamic jump to admin console to see their order live in queue
                   onNavigateToAdmin();
                 }}
                 className="flex-1 bg-primary text-white hover:bg-opacity-95 py-3.5 rounded-xl font-bold transition-all text-sm cursor-pointer"
               >
-                Lihat di Dashboard Logistik
+                {t.chk_success_admin_btn}
               </button>
             </div>
           </motion.div>
         ) : (
           /* Standard Unsubmitted checkout page grid mapping */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fadeIn">
             
             {/* Left side actions (Forms and payment) */}
             <div className="lg:col-span-7 space-y-6">
@@ -446,27 +471,27 @@ export default function CheckoutView({
                 {/* Auto fill helper */}
                 <button 
                   onClick={handleAutoFill}
-                  className="absolute top-4 right-4 text-[10px] font-bold text-secondary bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded transition-colors"
+                  className="absolute top-4 right-4 text-[10px] font-bold text-secondary bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded transition-colors cursor-pointer"
                 >
-                  ⚡ Auto-fill Penonton Demo
+                  {t.chk_form_auto_fill}
                 </button>
 
                 <div className="flex items-center gap-2 mb-6 text-primary">
                   <MapPin className="w-5 h-5 text-secondary" />
-                  <h2 className="font-headline text-lg font-bold">Informasi Pengiriman</h2>
+                  <h2 className="font-headline text-lg font-bold">{t.chk_form_title}</h2>
                 </div>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                        Nama Penerima
+                        {t.chk_form_label_name}
                       </label>
                       <div className="relative">
                         <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input 
                           type="text" 
-                          placeholder="Masukkan nama lengkap" 
+                          placeholder={t.chk_form_placeholder_name} 
                           value={recipientName}
                           onChange={(e) => setRecipientName(e.target.value)}
                           className={`w-full bg-white border ${errors.name ? 'border-red-400' : 'border-gray-200'} rounded-xl py-3 pl-9 pr-4 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all`}
@@ -477,13 +502,13 @@ export default function CheckoutView({
 
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                        Nomor Telepon
+                        {t.chk_form_label_phone}
                       </label>
                       <div className="relative">
                         <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input 
                           type="tel" 
-                          placeholder="0812-XXXX-XXXX" 
+                          placeholder={t.chk_form_placeholder_phone} 
                           value={phoneNumber}
                           onChange={(e) => setPhoneNumber(e.target.value)}
                           className={`w-full bg-white border ${errors.phone ? 'border-red-400' : 'border-gray-200'} rounded-xl py-3 pl-9 pr-4 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all`}
@@ -495,10 +520,10 @@ export default function CheckoutView({
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                      Alamat Lengkap
+                      {t.chk_form_label_address}
                     </label>
                     <textarea 
-                      placeholder="Contoh: Jl. Petani Sejahtera No. 88, RT/RW 03/05, Jakarta Selatan" 
+                      placeholder={t.chk_form_placeholder_address} 
                       rows={3}
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
@@ -514,26 +539,26 @@ export default function CheckoutView({
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2 text-primary">
                     <Gift className="w-5 h-5 text-secondary" />
-                    <h2 className="font-headline text-lg font-bold">Ringkasan Keranjang Pesanan</h2>
+                    <h2 className="font-headline text-lg font-bold">{t.chk_items_summary}</h2>
                   </div>
                   <span className="text-xs bg-emerald-50 text-primary px-3 py-1 rounded-full font-bold">
-                    {cartItems.length} Produk
+                    {translatedCartItems.length} {t.chk_items_count}
                   </span>
                 </div>
 
-                {cartItems.length === 0 ? (
+                {translatedCartItems.length === 0 ? (
                   <div className="py-8 text-center text-gray-400 text-sm space-y-3">
-                    <p>Keranjang Anda kosong saat ini.</p>
+                    <p>{t.chk_items_empty}</p>
                     <button 
                       onClick={onNavigateToCatalog}
                       className="bg-primary text-white text-xs px-4 py-2 rounded-lg font-bold hover:bg-opacity-95"
                     >
-                      Beli Sembako & Bahan Makanan Now
+                      {t.chk_items_shop_btn}
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-4 max-h-[280px] overflow-y-auto pr-2 divide-y divide-gray-50">
-                    {cartItems.map((item, index) => (
+                    {translatedCartItems.map((item, index) => (
                       <div key={item.product.id} className={`flex gap-4 items-center group pt-3 ${index === 0 ? 'pt-0' : ''}`}>
                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0">
                           <img 
@@ -548,13 +573,13 @@ export default function CheckoutView({
                             {item.product.name}
                           </h4>
                           <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                            Porsi {item.product.unit}
+                            {currentLanguage === 'ID' ? 'Porsi' : 'Unit'} {item.product.unit}
                           </span>
                         </div>
 
                         <div className="text-right flex flex-col items-end gap-1">
                           <span className="text-sm font-bold text-primary">
-                            Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}
+                            {formatPrice(item.product.price * item.quantity)}
                           </span>
                           
                           {/* Quantity adjustments inside checkout page directly to fit mockup logic */}
@@ -567,7 +592,7 @@ export default function CheckoutView({
                                   onRemoveItem(item.product.id);
                                 }
                               }}
-                              className="w-5 h-5 rounded hover:bg-white text-gray-500 font-bold flex items-center justify-center text-xs active:scale-95 transition-all text-center"
+                              className="w-5 h-5 rounded hover:bg-white text-gray-500 font-bold flex items-center justify-center text-xs active:scale-95 transition-all text-center cursor-pointer"
                             >
                               <Minus className="w-3 h-3" />
                             </button>
@@ -576,7 +601,7 @@ export default function CheckoutView({
                             </span>
                             <button 
                               onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
-                              className="w-5 h-5 rounded hover:bg-white text-gray-500 font-bold flex items-center justify-center text-xs active:scale-95 transition-all text-center"
+                              className="w-5 h-5 rounded hover:bg-white text-gray-500 font-bold flex items-center justify-center text-xs active:scale-95 transition-all text-center cursor-pointer"
                             >
                               <Plus className="w-3 h-3" />
                             </button>
@@ -587,7 +612,7 @@ export default function CheckoutView({
                         <button 
                           onClick={() => onRemoveItem(item.product.id)}
                           className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus item"
+                          title={currentLanguage === 'ID' ? "Hapus" : "Remove"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -601,7 +626,7 @@ export default function CheckoutView({
               <section className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100/40">
                 <div className="flex items-center gap-2 mb-4 text-primary">
                   <CreditCard className="w-5 h-5 text-secondary" />
-                  <h2 className="font-headline text-lg font-bold">Metode Pembayaran</h2>
+                  <h2 className="font-headline text-lg font-bold">{t.chk_payment_title}</h2>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -615,7 +640,7 @@ export default function CheckoutView({
                     }`}
                   >
                     <CheckCircle className={`w-5 h-5 mb-1 ${paymentMethod === 'cod' ? 'text-primary' : 'text-gray-300'}`} />
-                    <span className="text-xs font-bold">Bayar di Tempat (COD)</span>
+                    <span className="text-xs font-bold">{t.chk_payment_cod}</span>
                   </button>
 
                   {/* QRIS Item option */}
@@ -631,7 +656,7 @@ export default function CheckoutView({
                     }`}
                   >
                     <QrCode className={`w-5 h-5 mb-1 ${paymentMethod === 'qris' ? 'text-secondary' : 'text-gray-300'}`} />
-                    <span className="text-xs font-bold">QRIS Auto-Scan</span>
+                    <span className="text-xs font-bold">{t.chk_payment_qris}</span>
                   </button>
                 </div>
 
@@ -646,7 +671,7 @@ export default function CheckoutView({
                     >
                       <div className="p-6 bg-orange-50/30 rounded-xl border border-dashed border-secondary text-center space-y-4">
                         <p className="text-xs font-bold uppercase tracking-widest text-[#5d1900]">
-                          Silakan Scan Kode QRIS PanganKu
+                          {t.chk_qris_header}
                         </p>
                         
                         <div className="relative inline-block bg-white p-4 rounded-xl shadow-md border border-gray-100">
@@ -665,7 +690,7 @@ export default function CheckoutView({
                         </div>
                         
                         <p className="text-[10px] text-gray-500 italic max-w-sm mx-auto">
-                          Harap selesaikan pembayaran sebelum waktu habis untuk menghindari sistem mendeteksi pembatalan logistik otomatis.
+                          {t.chk_qris_disclaimer}
                         </p>
                       </div>
                     </motion.div>
@@ -680,10 +705,10 @@ export default function CheckoutView({
                   <Lock className="w-4 h-4 text-primary" />
                   <div>
                     <span className="text-xs font-extrabold text-[#0b1c30] block">
-                      Transaksi Terenkripsi &amp; Aman
+                      {t.chk_secure_footer_title}
                     </span>
                     <span className="text-[9px] text-gray-400 font-mono">
-                      X-CSRF-Token: pk_live_51MhUJeL89_SecureFulfill_f9X2
+                      {t.chk_secure_footer_hash}
                     </span>
                   </div>
                 </div>
@@ -700,7 +725,7 @@ export default function CheckoutView({
                 <div className="relative z-10 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-bold tracking-widest uppercase text-white/75">
-                      Progress Diskon Belanja
+                      {t.chk_disc_progress}
                     </span>
                     <span className="bg-[#fe6a34] text-white text-[9px] font-extrabold px-2 py-0.5 rounded animate-bounce">
                       HOT DEAL
@@ -719,9 +744,9 @@ export default function CheckoutView({
                     />
                   </div>
 
-                  <div className="flex justify-between text-[10px] font-bold text-white/80 font-mono">
-                    <span>Target Tier 1: Rp 75k (Diskon 7.5k)</span>
-                    <span>Target Tier 2: Rp 150k (Diskon 20k)</span>
+                  <div className="flex flex-col sm:flex-row justify-between text-[10px] font-bold text-white/80 font-mono gap-1">
+                    <span>{t.chk_disc_tier1}</span>
+                    <span>{t.chk_disc_tier2}</span>
                   </div>
                 </div>
 
@@ -734,45 +759,45 @@ export default function CheckoutView({
               {/* Bill totals and Submit Trigger button */}
               <section className="bg-white p-6 rounded-2xl shadow-lg border border-emerald-100/50 space-y-6">
                 <h3 className="font-headline text-base font-extrabold text-primary border-b border-gray-100 pb-3">
-                  Ringkasan Tagihan Masuk
+                  {t.chk_bill_title}
                 </h3>
 
                 <div className="space-y-3.5 text-xs text-gray-600">
                   <div className="flex justify-between">
-                    <span>Subtotal ({cartItems.length} barang)</span>
-                    <span className="font-bold text-gray-900">Rp {subtotal.toLocaleString('id-ID')}</span>
+                    <span>{t.chk_bill_subtotal} ({translatedCartItems.length} {t.chk_bill_subtotal_units})</span>
+                    <span className="font-bold text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
 
                   {discount > 0 ? (
-                    <div className="flex justify-between text-secondary font-bold bg-amber-50/50 p-2 rounded-lg">
+                    <div className="flex justify-between text-secondary font-bold bg-amber-50/50 p-2 rounded-lg leading-none items-center">
                       <span className="flex items-center gap-1">
                         <Percent className="w-3.5 h-3.5 text-[#ab3500]" />
-                        Diskon Tier {subtotal >= 150000 ? '2' : '1'}
+                        {t.chk_bill_discount} {subtotal >= 150000 ? '2' : '1'}
                       </span>
-                      <span>-Rp {discount.toLocaleString('id-ID')}</span>
+                      <span>-{formatPrice(discount)}</span>
                     </div>
                   ) : (
                     <div className="flex justify-between text-gray-400 italic">
-                      <span>Diskon Tiered</span>
-                      <span>Belum Terbuka</span>
+                      <span>{t.chk_bill_discount}</span>
+                      <span>{t.chk_bill_discount_locked}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between">
-                    <span>Ongkos Kirim Logistik</span>
+                    <span>{t.chk_bill_shipping}</span>
                     <span className="font-bold text-gray-900">
-                      {shippingCharge > 0 ? `Rp ${shippingCharge.toLocaleString('id-ID')}` : 'Rp 0'}
+                      {shippingCharge > 0 ? formatPrice(shippingCharge) : 'Rp 0'}
                     </span>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-end">
-                  <span className="font-headline text-sm font-bold text-primary">Total Tagihan</span>
+                  <span className="font-headline text-sm font-bold text-primary">{t.chk_bill_total}</span>
                   <div className="text-right">
                     <span className="font-headline text-2xl font-black text-[#052f0c]">
-                      Rp {totalBill.toLocaleString('id-ID')}
+                      {formatPrice(totalBill)}
                     </span>
-                    <p className="text-[9px] text-gray-400 mt-0.5">Termasuk pajak PPN 11%</p>
+                    <p className="text-[9px] text-gray-400 mt-0.5">{t.chk_bill_ppn}</p>
                   </div>
                 </div>
 
@@ -785,9 +810,9 @@ export default function CheckoutView({
                 {/* Buat Pesanan button */}
                 <button 
                   onClick={handleSubmitOrder}
-                  disabled={isSubmitting || cartItems.length === 0}
+                  disabled={isSubmitting || translatedCartItems.length === 0}
                   className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all text-sm cursor-pointer ${
-                    isSubmitting || cartItems.length === 0 
+                    isSubmitting || translatedCartItems.length === 0 
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
                       : 'bg-secondary text-white hover:bg-opacity-95'
                   }`}
@@ -799,29 +824,29 @@ export default function CheckoutView({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      Memproses Logistik...
+                      <span>{t.chk_bill_submitting}</span>
                     </span>
                   ) : (
                     <>
-                      <span>Buat Pesanan Sekarang</span>
+                      <span>{t.chk_bill_submit}</span>
                       <ArrowLeft className="w-4 h-4 rotate-180" />
                     </>
                   )}
                 </button>
 
                 <p className="text-center text-[10px] text-gray-400 leading-relaxed pt-2">
-                  Dengan mengklik di atas, Anda telah secara sah menyetujui <a href="#" className="underline hover:text-primary">Syarat &amp; Ketentuan</a> serta <a href="#" className="underline hover:text-primary">Kebijakan Privasi</a> PanganKu Enterprise.
+                  {t.chk_bill_terms_disclaimer}
                 </p>
               </section>
 
               {/* Promo recommendation helper badge to match mockup bottom look if under targets */}
               {subtotal < 150000 && (
-                <div className="bg-orange-50 text-[#ab3500] p-4 rounded-2xl flex items-center gap-3 border border-orange-100 shadow-sm">
+                <div className="bg-orange-50 text-[#ab3500] p-4 rounded-2xl flex items-center gap-3 border border-orange-100 shadow-sm animate-fadeIn">
                   <Percent className="w-6 h-6 text-secondary flex-shrink-0" />
                   <div className="text-xs">
-                    <p className="font-bold">Hemat Rp 12.500 lagi!</p>
+                    <p className="font-bold">{t.chk_promo_save_more_title}</p>
                     <p className="text-gray-500 text-[11px] mt-0.5">
-                      Tambah Rp {(150000 - subtotal).toLocaleString('id-ID')} untuk membuka klaim diskon Tier 2 (Rp 20.000).
+                      {t.chk_promo_save_more_desc.replace('{gap}', (150000 - subtotal).toLocaleString(currentLanguage === 'ID' ? 'id-ID' : 'en-US'))}
                     </p>
                   </div>
                 </div>
