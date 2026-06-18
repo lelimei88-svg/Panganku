@@ -98,7 +98,19 @@ export default function App() {
   }, []);
 
   const handleInstallClick = () => {
-    setShowInstallGuide(true);
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('[PWA] User accepted the native install prompt');
+          setIsPwaInstalled(true);
+          localStorage.setItem('panganku_installed', 'true');
+        }
+        setDeferredPrompt(null);
+      });
+    } else {
+      setShowInstallGuide(true);
+    }
   };
 
   const handleStartNow = () => {

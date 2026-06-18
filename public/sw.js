@@ -46,16 +46,31 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event with Network-First fallback to Cache strategy
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests and local/http/https requests
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  const url = new URL(event.request.url);
+
+  // Bypass API routes and HMR scripts
+  if (url.pathname.startsWith('/api') || url.hostname === 'localhost' && url.port === '3000' && url.pathname.includes('hot')) {
+    return;
+  }
+
+  // Check if request is same-origin or an external image resource (e.g. Google User Content or Unsplash)
+  const isSameOrigin = url.origin === self.location.origin;
+  const isExternalImage = url.hostname.includes('googleusercontent.com') || url.hostname.includes('unsplash.com') || event.request.destination === 'image';
+
+  if (!isSameOrigin && !isExternalImage) {
     return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // If valid response, clone it and put in cache
-        if (response && response.status === 200 && response.type === 'basic') {
+        // If valid response (status 200 or status 0 for opaque cross-origin requests), clone and save to cache
+        if (response && (response.status === 200 || response.status === 0)) {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -64,12 +79,12 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // If network fails, serve from cache
+        // If network fails (perfect offline support), serve from cache
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // If not in cache and requesting index.html or root, fallback to '/'
+          // If navigating but offline, serve fallback index.html
           if (event.request.mode === 'navigate') {
             return caches.match('/');
           }
