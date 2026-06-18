@@ -57,7 +57,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Ayam Kampung',
     price: 65000,
     category: 'siap-saji',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXu0kvlOriuJjfB6bwQTQYZwHuK5Ah1hmMlBJlGdJJox-0GYBqnZP2qAiMOUvHaWoYh_QIEYfc-bCY6FP8qkCJElMe3N5VnrwhQWeRgMAgZG-lR36EgWjPkZT43EOPNOSdcpNGE_cJGkmZJX3iEbOQtDqQsZJITt2wiz7Hdro96XZQ1shvoUOLNdtP5d-uqMr18q7CtWOitvddTeghq1ZH6n_prLYvNWqRDktaebrPkRp7ii9-mDHFqOTs_zZ_95pG3Vmz6Cg6KmfF4',
+    image: '/images/ayam-kampung.jpg',
     unit: '1 Ekor (~0.8kg)',
     description: 'Daging ayam kampung segar, padat gizi, empuk, dan diproses secara halal.'
   },
@@ -68,14 +68,14 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'bumbu',
     image: 'https://images.unsplash.com/photo-1508747703725-719777637510?q=80&w=300&auto=format&fit=crop',
     unit: '500g',
-    description: 'Bawang merah segar kupas kualitas premium, aromatis dan padat.'
+    description: 'Bawang merah segar kupas kualitas premium, aromatis and padat.'
   },
   {
     id: 'bawang-putih',
     name: 'Bawang Putih 500g',
     price: 22000,
     category: 'bumbu',
-    image: 'https://images.unsplash.com/photo-1598512752271-33f913a5af13?q=80&w=300&auto=format&fit=crop',
+    image: '/images/bawang-putih.jpg',
     unit: '500g',
     description: 'Bawang putih kating premium, siung besar dan aroma kuat.'
   },
@@ -84,7 +84,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Cabai Rawit 250g',
     price: 12000,
     category: 'bumbu',
-    image: 'https://images.unsplash.com/photo-1590779033100-9f60705a2f3b?q=80&w=300&auto=format&fit=crop',
+    image: '/images/cabai-rawit.jpg',
     unit: '250g',
     description: 'Cabai rawit merah pedas segar dipetik langsung oleh petani lokal.'
   },
@@ -93,7 +93,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Bakso Aci Instan',
     price: 15000,
     category: 'siap-saji',
-    image: 'https://images.unsplash.com/photo-1610440042657-612c34d95e9f?q=80&w=300&auto=format&fit=crop',
+    image: '/images/bakso-aci.jpg',
     unit: '1 Pack',
     description: 'Baso aci instan dengan bumbu lengkap, gurih, pedas, dan nikmat.'
   },
@@ -102,7 +102,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Sosis Bakar 500g',
     price: 45000,
     category: 'siap-saji',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=300&auto=format&fit=crop',
+    image: '/images/sosis-bakar.jpg',
     unit: '500g',
     description: 'Sosis sapi bakar ukuran jumbo yang lezat, gurih, dan berkualitas tinggi.'
   },
@@ -111,7 +111,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Air Mineral 600ml',
     price: 3500,
     category: 'minuman',
-    image: 'https://images.unsplash.com/photo-1523362628742-0c2601576926?q=80&w=300&auto=format&fit=crop',
+    image: '/images/air-mineral.jpg',
     unit: '600ml',
     description: 'Air mineral murni pegunungan sejuk dan menyegarkan tubuh.'
   },
@@ -120,16 +120,16 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Susu UHT 1L',
     price: 19500,
     category: 'minuman',
-    image: 'https://images.unsplash.com/photo-1550583724-125581fe35ad?q=80&w=300&auto=format&fit=crop',
+    image: '/images/susu-uht.jpg',
     unit: '1L',
-    description: 'Susu cair segar UHT berlemak tinggi, penuh gizi kalsium.'
+    description: 'Susu cair segar UHT berlemak tinggi, penuh gizi kals.'
   },
   {
     id: 'kecap-manis',
     name: 'Kecap Manis 550ml',
     price: 24000,
     category: 'bumbu',
-    image: 'https://images.unsplash.com/photo-1548148332-17941f581338?q=80&w=300&auto=format&fit=crop',
+    image: '/images/kecap-manis.jpg',
     unit: '550ml',
     description: 'Kecap manis kental hitam gurih murni, penyedap masakan nusantara.'
   },
@@ -138,7 +138,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Pop Mie Goreng',
     price: 5500,
     category: 'siap-saji',
-    image: 'https://images.unsplash.com/photo-1526318896980-cf78c088247c?q=80&w=300&auto=format&fit=crop',
+    image: '/images/pop-mie.jpg',
     unit: '1 Cup',
     description: 'Mie instan dalam cup rasa mie goreng spesial praktis tinggal seduh.'
   },
@@ -147,7 +147,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     name: 'Teh Kemasan 330ml',
     price: 3000,
     category: 'minuman',
-    image: 'https://images.unsplash.com/photo-1594631252845-29fc458695d7?q=80&w=300&auto=format&fit=crop',
+    image: '/images/teh-kemasan.jpg',
     unit: '330ml',
     description: 'Teh melati manis segar dalam kemasan botol siap minum.'
   }

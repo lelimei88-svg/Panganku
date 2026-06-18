@@ -91,7 +91,7 @@ export default function App() {
         name: 'Ayam Kampung',
         price: 65000,
         category: 'siap-saji',
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXu0kvlOriuJjfB6bwQTQYZwHuK5Ah1hmMlBJlGdJJox-0GYBqnZP2qAiMOUvHaWoYh_QIEYfc-bCY6FP8qkCJElMe3N5VnrwhQWeRgMAgZG-lR36EgWjPkZT43EOPNOSdcpNGE_cJGkmZJX3iEbOQtDqQsZJITt2wiz7Hdro96XZQ1shvoUOLNdtP5d-uqMr18q7CtWOitvddTeghq1ZH6n_prLYvNWqRDktaebrPkRp7ii9-mDHFqOTs_zZ_95pG3Vmz6Cg6KmfF4',
+        image: '/images/ayam-kampung.jpg',
         unit: '1 Ekor (~0.8kg)'
       },
       quantity: 1
