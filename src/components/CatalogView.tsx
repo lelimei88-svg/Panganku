@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Product } from '../types';
+import { Product, CartItem } from '../types';
 import { INITIAL_PRODUCTS } from '../data';
 import { 
   ShoppingBag, 
@@ -13,7 +13,9 @@ import {
   Minus,
   Check,
   Zap,
-  Heart
+  Heart,
+  Trash2,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -22,13 +24,25 @@ interface CatalogViewProps {
   cartCount: number;
   onNavigateToCheckout: () => void;
   onNavigateToAdmin: () => void;
+  isCartDrawerOpen?: boolean;
+  setIsCartDrawerOpen?: (isOpen: boolean) => void;
+  cartItems?: CartItem[];
+  onUpdateQuantity?: (productId: string, quantity: number) => void;
+  onRemoveItem?: (productId: string) => void;
+  onClearCart?: () => void;
 }
 
 export default function CatalogView({
   onAddToCart,
   cartCount,
   onNavigateToCheckout,
-  onNavigateToAdmin
+  onNavigateToAdmin,
+  isCartDrawerOpen = false,
+  setIsCartDrawerOpen = () => {},
+  cartItems = [],
+  onUpdateQuantity = () => {},
+  onRemoveItem = () => {},
+  onClearCart = () => {}
 }: CatalogViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'bumbu' | 'siap-saji' | 'minuman'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,9 +140,9 @@ export default function CatalogView({
             />
           </div>
 
-          {/* Cart Icon trigger */}
+          {/* Cart Icon trigger toggles shopping cart sidebar drawer */}
           <button 
-            onClick={onNavigateToCheckout}
+            onClick={() => setIsCartDrawerOpen(!isCartDrawerOpen)}
             className="relative p-2 text-gray-600 hover:text-secondary hover:bg-gray-50 rounded-full transition-all cursor-pointer active:scale-95"
             id="cart-btn"
           >
@@ -166,30 +180,24 @@ export default function CatalogView({
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent flex items-center px-6 md:px-16" />
           
           <div className="absolute inset-0 flex items-center px-4 md:px-16 max-w-7xl mx-auto z-10">
-            <div className="max-w-2xl text-white space-y-4 md:space-y-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-white text-xs font-semibold stroke-white border border-white/20">
-                <Zap className="w-3 h-3 text-accent fill-accent" />
-                <span>Pangan Segar Bergaransi Resmi</span>
+            <div className="max-w-2xl text-white flex flex-col items-start justify-center text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-white text-xs font-semibold stroke-white border border-white/20 select-none">
+                <span className="text-[#a3e635]">⚡</span>
+                <span className="font-extrabold tracking-wider text-white">Pangan Segar Bergaransi Resmi</span>
               </div>
-              <h1 className="font-headline text-3xl md:text-5xl font-extrabold leading-tight text-white tracking-tight">
-                Penuhi Kebutuhan Dapur Anda dengan <span className="text-amber-300">Aman</span>, <span className="text-accent underline decoration-wavy">Hemat</span>, dan <span className="text-emerald-300">Cepat</span>.
+              <h1 className="font-headline text-3xl md:text-5xl font-extrabold leading-tight text-white tracking-tight mt-4">
+                Penuhi Kebutuhan Dapur Anda dengan <span className="text-yellow-300 font-extrabold drop-shadow">Aman</span>, <span className="text-[#fe6a34] underline decoration-wavy decoration-[#fe6a34] font-extrabold">Hemat</span>, dan <span className="text-emerald-400 font-extrabold">Cepat</span>.
               </h1>
-              <p className="text-sm md:text-base font-medium text-white/80 leading-relaxed max-w-lg">
+              <p className="text-sm md:text-base font-medium text-white/80 leading-relaxed max-w-lg mt-4">
                 Distribusi pangan skala enterprise dengan jaminan mutu terbaik dari petani binaan, didukung logistik pengiriman real-time terenkripsi.
               </p>
-              <div className="flex gap-3 pt-2">
+              <div className="mt-8">
                 <a 
                   href="#bahan-utama" 
-                  className="bg-secondary text-white px-6 py-3 rounded-xl font-bold hover:bg-opacity-95 transition-all shadow-lg text-sm text-center"
+                  className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white px-8 py-3.5 rounded-xl font-bold transition-colors duration-200 ease-in-out shadow-lg text-sm text-center inline-block"
                 >
                   Mulai Belanja
                 </a>
-                <button 
-                  onClick={onNavigateToCheckout}
-                  className="border-2 border-white text-white px-5 py-3 rounded-xl font-bold hover:bg-white/10 transition-all text-sm"
-                >
-                  Halaman Checkout
-                </button>
               </div>
             </div>
           </div>
@@ -484,6 +492,168 @@ export default function CatalogView({
           </div>
         </div>
       </footer>
+
+      {/* Sidebar Shopping Cart / Checkout Drawer Overlay */}
+      <AnimatePresence>
+        {isCartDrawerOpen && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCartDrawerOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 pointer-events-auto"
+            />
+
+            {/* Slide-over Drawer Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-3xl z-50 flex flex-col pointer-events-auto border-l border-gray-150"
+            >
+              {/* Drawer Header */}
+              <div className="bg-[#031505] text-white p-5 flex items-center justify-between border-b border-white/10 select-none shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-lime-400 text-[#031505] rounded-xl font-black text-[10px] tracking-widest uppercase">
+                    BASKET
+                  </div>
+                  <div>
+                    <h3 className="font-headline font-black text-sm md:text-base tracking-tight uppercase">Keranjang Belanja</h3>
+                    <p className="text-gray-400 text-[9px] tracking-wider uppercase font-bold text-lime-400">PanganKu Logistics Drawer</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsCartDrawerOpen(false)}
+                  className="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full transition-all flex items-center justify-center border border-white/5 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Drawer Scrollable Content */}
+              <div className="flex-grow overflow-y-auto p-5 space-y-4">
+                {cartItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 h-full select-none">
+                    <div className="p-4 bg-emerald-50 rounded-full border border-emerald-100 flex items-center justify-center text-primary mb-4 animate-bounce">
+                      <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
+                    </div>
+                    <p className="font-extrabold text-sm text-[#031505]">Keranjang Belanja Kosong</p>
+                    <p className="text-xs mt-1 text-gray-500 max-w-xs leading-relaxed">
+                      Silakan jelajahi katalog bahan pangan pokok di bawah dan klik <strong>Tambah</strong> untuk mengisi logistik Anda.
+                    </p>
+                    <button
+                      onClick={() => setIsCartDrawerOpen(false)}
+                      className="mt-6 px-4 py-2 bg-emerald-100 text-primary text-xs font-black rounded-lg hover:bg-[#FF6B35] hover:text-white transition-all cursor-pointer"
+                    >
+                      Mulai Belanja Sekarang
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Detail Barang Pesanan ({cartItems.length})</p>
+                    {cartItems.map((item) => (
+                      <div 
+                        key={item.product.id} 
+                        className="flex gap-3 pb-3.5 border-b border-gray-100 items-start hover:bg-gray-50/50 p-1.5 rounded-xl transition-all"
+                      >
+                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shrink-0 bg-gray-50">
+                          <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-xs text-gray-900 truncate leading-snug">{item.product.name}</h4>
+                          <p className="text-[10px] text-gray-500 truncate mt-0.5">{item.product.description}</p>
+                          <p className="text-xs font-extrabold text-primary mt-1.5">
+                            Rp {item.product.price.toLocaleString('id-ID')} <span className="text-[9px] text-gray-400 font-normal font-sans">/ {item.product.unit}</span>
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2.5 shrink-0">
+                          {/* Quantity control */}
+                          <div className="flex items-center gap-1 border border-gray-250 rounded-lg p-0.5 bg-white shadow-xs scale-90 origin-right">
+                            <button 
+                              onClick={() => {
+                                if (item.quantity > 1) {
+                                  onUpdateQuantity(item.product.id, item.quantity - 1);
+                                } else {
+                                  onRemoveItem(item.product.id);
+                                }
+                              }}
+                              className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all rounded-md cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-5 text-center text-xs font-black text-gray-900">{item.quantity}</span>
+                            <button 
+                              onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+                              className="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-primary hover:bg-emerald-50 transition-all rounded-md cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                          {/* trash button */}
+                          <button 
+                            onClick={() => onRemoveItem(item.product.id)}
+                            className="text-gray-450 hover:text-red-650 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Hapus item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Drawer Footer info */}
+              {cartItems.length > 0 && (
+                <div className="border-t border-gray-150 p-5 bg-emerald-50/20 space-y-4 shrink-0 select-none">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span>Total Jenis Barang:</span>
+                      <span className="font-extrabold text-gray-900">{cartItems.length} item</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span>Total Kuantitas:</span>
+                      <span className="font-extrabold text-gray-900">
+                        {cartItems.reduce((acc, item) => acc + item.quantity, 0)} Pcs
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-end pt-2 border-t border-dashed border-gray-200">
+                      <span className="font-bold text-xs text-gray-800">Subtotal Logistik:</span>
+                      <span className="font-black text-primary text-base md:text-lg">
+                        Rp {cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <button 
+                      onClick={onClearCart}
+                      className="py-2.5 px-2 border border-gray-200 hover:bg-gray-100 text-gray-600 font-bold text-xs rounded-xl transition-all cursor-pointer text-center"
+                    >
+                      Batal Semua
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsCartDrawerOpen(false);
+                        onNavigateToCheckout();
+                      }}
+                      className="col-span-2 py-2.5 px-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-extrabold text-xs rounded-md transition-colors duration-200 shadow-[0_4px_12px_rgba(255,107,53,0.3)] hover:shadow-[0_5px_15px_rgba(255,107,53,0.5)] cursor-pointer text-center flex items-center justify-center gap-1.5 uppercase tracking-wider"
+                    >
+                      <span>Checkout Aman</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
     </div>
   );

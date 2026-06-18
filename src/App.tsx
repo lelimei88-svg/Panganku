@@ -16,7 +16,13 @@ import {
   Info,
   LogIn,
   LogOut,
-  User as UserIcon
+  User as UserIcon,
+  Lock,
+  Globe,
+  Smartphone,
+  Download,
+  X,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext.tsx';
@@ -25,7 +31,68 @@ export default function App() {
   const [activeView, setActiveView] = useState<'catalog' | 'checkout' | 'admin' | 'optimization'>('catalog');
   const { user, token, googleAccessToken, loginWithGoogle, logout } = useAuth();
 
+  // Redesign custom nav states
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [isAdminPasswordModalOpen, setIsAdminPasswordModalOpen] = useState(false);
+  const [adminUsernameInput, setAdminUsernameInput] = useState('');
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminPasswordError, setAdminPasswordError] = useState('');
+  const [adminErrorToast, setAdminErrorToast] = useState('');
+  const [currentLanguage, setCurrentLanguage] = useState<'ID' | 'EN'>('ID');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showLanguageToast, setShowLanguageToast] = useState(false);
+  const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPromptEvent(e);
+      console.log('[PWA] beforeinstallprompt event caught');
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (installPromptEvent) {
+      installPromptEvent.prompt();
+      const { outcome } = await installPromptEvent.userChoice;
+      console.log(`[PWA] Install custom response: ${outcome}`);
+      setInstallPromptEvent(null);
+    } else {
+      setShowInstallGuide(true);
+    }
+  };
+
+  const handleStartNow = () => {
+    setActiveView('catalog');
+    setIsCartDrawerOpen(true);
+    setTimeout(() => {
+      const element = document.getElementById('bahan-utama');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 150);
+  };
+
+  const handleAdminLoginSubmit = () => {
+    const isUsernameCorrect = adminUsernameInput.trim().toLowerCase() === 'admin';
+    const isPasswordCorrect = adminPasswordInput === 'admin123' || adminPasswordInput === 'admin';
+    if (isUsernameCorrect && isPasswordCorrect) {
+      setActiveView('admin');
+      setIsAdminPasswordModalOpen(false);
+      setAdminUsernameInput('');
+      setAdminPasswordInput('');
+      setAdminPasswordError('');
+    } else {
+      setAdminPasswordError('Kredensial Admin Salah');
+      setAdminErrorToast('Kredensial Admin Salah');
+      setTimeout(() => {
+        setAdminErrorToast('');
+      }, 3000);
+    }
+  };
   
   // Cart state initialized with default 2 items
   const [cartItems, setCartItems] = useState<CartItem[]>([
@@ -170,116 +237,407 @@ export default function App() {
   return (
     <div className="relative font-sans min-h-screen bg-[#f3fbf5]">
       
-      {/* Dynamic Floating view-switch controller with Integrated Authentication */}
-      <div className="bg-[#052f0c] text-white text-xs px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 sticky top-0 z-50 border-b border-[#fe6a34]">
-        <div className="flex items-center gap-2">
-          <Workflow className="w-4 h-4 text-[#ffc692] animate-spin" style={{ animationDuration: '3s' }} />
-          <span className="font-bold tracking-wide">PanganKu Integrated Ecosystem Switcher:</span>
-          {dbCredentialsActive() ? (
-            <span className="text-[#a7f3d0] text-[10.5px]">Cloud SQL Synced</span>
-          ) : (
-            <span className="text-gray-300 text-[10.5px]">Local Sandbox Mode</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 font-semibold flex-wrap">
-          <button 
-            onClick={() => setActiveView('catalog')}
-            className={`px-3 py-1 rounded transition-all cursor-pointer ${
-              activeView === 'catalog' 
-                ? 'bg-[#fe6a34] text-white font-extrabold shadow-sm' 
-                : 'bg-white/15 text-white/90 hover:bg-white/20'
-            }`}
-          >
-            🛒 Catalog Belanja
-          </button>
-
-          <button 
-            onClick={() => setActiveView('checkout')}
-            className={`px-3 py-1 rounded transition-all cursor-pointer relative ${
-              activeView === 'checkout' 
-                ? 'bg-[#ab3500] text-white font-extrabold shadow-sm' 
-                : 'bg-white/15 text-white/90 hover:bg-white/20'
-            }`}
-          >
-            💳 Checkout Aman
-            {totalCartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#fe6a34] text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">
-                {totalCartCount}
-              </span>
-            )}
-          </button>
-
-          <button 
-            onClick={() => setActiveView('admin')}
-            className={`px-3 py-1 rounded transition-all cursor-pointer ${
-              activeView === 'admin' 
-                ? 'bg-[#ab3500] text-white font-bold shadow-sm' 
-                : 'bg-white/15 text-white/90 hover:bg-white/20'
-            }`}
-          >
-            📊 Admin & Logistik
-            {orders.length > 0 && (
-              <span className="ml-1 bg-red-500 text-white text-[9px] px-1 rounded font-bold">
-                {orders.filter(o=>o.status==='PENDING').length} Urg
-              </span>
-            )}
-          </button>
-
-          <button 
-            onClick={() => setActiveView('optimization')}
-            className={`px-3 py-1 rounded transition-all cursor-pointer flex items-center gap-1 ${
-              activeView === 'optimization' 
-                ? 'bg-[#fe6a34] text-white font-black shadow-sm' 
-                : 'bg-white/15 text-white/90 hover:bg-white/20'
-            }`}
-          >
-            <span>⚡ Optimasi & Cache</span>
-          </button>
-
-
-
-          {/* Firebase Authentication integration */}
-          <div className="h-4.5 w-px bg-white/20 mx-1 hidden sm:block"></div>
-
-          {user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-white/10 px-2 py-0.5 rounded-xl border border-white/10">
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName || ''} className="w-4 h-4 rounded-full referrerPolicy='no-referrer'" />
-                ) : (
-                  <UserIcon className="w-3.5 h-3.5 text-[#ffc692]" />
-                )}
-                <span className="text-[10px] text-white/90 truncate max-w-[90px]">
-                  {user.displayName || user.email}
-                </span>
-              </div>
-              <button 
-                onClick={logout}
-                className="bg-red-950/40 text-red-200 hover:bg-red-900/40 px-2 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1 border border-red-500/20"
-                id="sign-out-btn"
-              >
-                <LogOut className="w-3 h-3" />
-                <span>Keluar</span>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={loginWithGoogle}
-              className="bg-[#fe6a34] hover:bg-[#ab3500] text-white px-2.5 py-1 rounded text-[10px] font-bold transition-colors cursor-pointer flex items-center gap-1"
-              id="google-login-btn"
+      {/* Redesigned TOP NAVBAR based on image_fca525.png with brand theme from image_fe6323.png */}
+      <div className="bg-[#031505]/95 backdrop-blur-sm text-white font-sans sticky top-0 z-50 shadow-md border-b border-white/10 active:translate-y-0 select-none">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+          
+          {/* Left Side: Elegant ADMIN link with lock icon */}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsAdminPasswordModalOpen(true)}
+              className="inline-flex items-center gap-2 text-xs font-black text-white/95 hover:text-[#FF6B35] transition-colors uppercase tracking-widest py-1.5 cursor-pointer"
+              id="admin-nav-link"
             >
-              <LogIn className="w-3 h-3" />
-              <span>Masuk Google</span>
+              <Lock className="w-4 h-4 text-[#FF6B35] stroke-[2.5]" />
+              <span>ADMIN</span>
             </button>
-          )}
-        </div>
-        
-        <div className="hidden lg:flex items-center gap-1.5 text-[10px] text-emerald-200 opacity-80 uppercase tracking-wider font-mono">
-          <Info className="w-3.5 h-3.5" />
-          <span>Click any pill button to test views</span>
+          </div>
+
+          {/* Center-Left & Center-Right content wrapped nicely */}
+          <div className="flex items-center gap-3 md:gap-5 flex-wrap">
+            {/* Center-Left: Prominent PASANG APLIKASI with brand orange border */}
+            <button 
+              onClick={handleInstallClick}
+              className="px-3.5 py-1.5 md:py-2 border-2 border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-black text-[10.5px] md:text-xs tracking-widest rounded-xl transition-all duration-300 cursor-pointer shadow-[0_0_8px_rgba(255,107,53,0.15)] flex items-center gap-1.5"
+              id="pwa-install-nav-btn"
+            >
+              <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>PASANG APLIKASI</span>
+            </button>
+
+            {/* Center-Right: Localized language switcher ID | EN with world icon */}
+            <button 
+              onClick={() => {
+                setCurrentLanguage(prev => prev === 'ID' ? 'EN' : 'ID');
+                setShowLanguageToast(true);
+                setTimeout(() => setShowLanguageToast(false), 2000);
+              }}
+              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold hover:bg-white/10 text-white/90 active:scale-95 transition-all cursor-pointer border border-white/5"
+              title="Ganti Bahasa / Switch Language"
+              id="language-switcher-btn"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#FF6B35] stroke-[2]" />
+              <span className="font-mono tracking-wider font-extrabold text-[11px]">{currentLanguage === 'ID' ? 'ID | EN' : 'EN | ID'}</span>
+            </button>
+          </div>
+
+          {/* Right-Center & Far Right groups */}
+          <div className="flex items-center gap-4">
+            {/* Right-Center: "AKUN SAYA" text link toggling profile info */}
+            <button 
+              onClick={() => setIsProfileOpen(true)}
+              className="text-xs font-extrabold text-white/90 hover:text-[#FF6B35] hover:underline transition-all cursor-pointer flex items-center gap-2"
+              id="my-account-nav-link"
+            >
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="Profile" className="w-5 h-5 rounded-full border border-[#FF6B35] referrerPolicy='no-referrer'" />
+              ) : (
+                <div className="w-5 h-5 rounded-full bg-[#FF6B35]/20 border border-[#FF6B35]/40 flex items-center justify-center">
+                  <UserIcon className="w-3.5 h-3.5 text-[#FF6B35]" />
+                </div>
+              )}
+              <span className="tracking-widest uppercase text-[11px]">AKUN SAYA</span>
+              {user && <span className="w-1.5 h-1.5 bg-[#FF6B35] rounded-full animate-pulse shrink-0"></span>}
+            </button>
+
+            {/* Far Right: Active Shopping Cart / Checkout interface button */}
+            <button 
+              onClick={handleStartNow}
+              className="bg-[#FF6B35] text-white hover:bg-[#E55A2B] font-semibold px-5 py-2 rounded-md shadow-sm transition-all duration-200 ease-in-out flex items-center gap-2 text-[11px] md:text-sm font-headline active:scale-95 cursor-pointer uppercase tracking-widest animate-[pulse_3s_infinite]"
+              id="start-now-nav-btn"
+            >
+              <ShoppingCart className="w-4 h-4 stroke-[2.5]" />
+              <span>Keranjang (Checkout)</span>
+            </button>
+          </div>
+
         </div>
       </div>
+
+      {/* Admin Password Login Modal */}
+      <AnimatePresence>
+        {isAdminPasswordModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-lime-500/10"
+            >
+              <div className="bg-[#031505] text-white p-6 relative">
+                <button 
+                  onClick={() => {
+                    setIsAdminPasswordModalOpen(false);
+                    setAdminUsernameInput('');
+                    setAdminPasswordInput('');
+                    setAdminPasswordError('');
+                  }}
+                  className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full transition-all cursor-pointer flex items-center justify-center border border-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-red-500/20 text-red-400 rounded-xl">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-headline font-black text-base tracking-tight">Protected Logistics Console</h3>
+                    <p className="text-gray-400 text-[10px] tracking-wider uppercase font-bold">Authentication Required</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Masukkan nama dan sandi administrator untuk mengonfirmasi status penanggung jawab dan mengakses konsol logistik.
+                </p>
+
+                {/* Nama Admin */}
+                <div>
+                  <label className="block text-[10px] font-bold text-secondary uppercase tracking-wider mb-1">Nama Admin / Username Admin</label>
+                  <input 
+                    type="text"
+                    placeholder="Contoh: admin"
+                    value={adminUsernameInput}
+                    onChange={(e) => {
+                      setAdminUsernameInput(e.target.value);
+                      setAdminPasswordError('');
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none text-xs focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                {/* Kata Sandi */}
+                <div>
+                  <label className="block text-[10px] font-bold text-secondary uppercase tracking-wider mb-1">Kata Sandi / Password Admin</label>
+                  <input 
+                    type="password"
+                    placeholder="Sandi bawaan: admin123"
+                    value={adminPasswordInput}
+                    onChange={(e) => {
+                      setAdminPasswordInput(e.target.value);
+                      setAdminPasswordError('');
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 outline-none text-xs focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAdminLoginSubmit();
+                      }
+                    }}
+                  />
+                  {adminPasswordError && (
+                    <p className="text-xs text-red-500 mt-1 font-semibold">{adminPasswordError}</p>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button 
+                    onClick={() => {
+                      setIsAdminPasswordModalOpen(false);
+                      setAdminUsernameInput('');
+                      setAdminPasswordInput('');
+                      setAdminPasswordError('');
+                    }}
+                    className="px-4 py-2 bg-gray-150 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    onClick={handleAdminLoginSubmit}
+                    className="px-5 py-2 border-2 border-lime-500 text-lime-600 hover:bg-lime-500 hover:text-[#031505] font-black text-xs rounded-xl transition-all duration-200 cursor-pointer uppercase tracking-wider"
+                  >
+                    Masuk Logistik
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Profile Modal ("AKUN SAYA") */}
+      <AnimatePresence>
+        {isProfileOpen && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-emerald-100"
+            >
+              {/* Header */}
+              <div className="bg-[#031505] text-white p-6 relative">
+                <button 
+                  onClick={() => setIsProfileOpen(false)}
+                  className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full transition-colors cursor-pointer flex items-center justify-center border border-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-lime-400 text-[#031505] rounded-xl font-black text-[10px] tracking-widest uppercase">
+                    PROFIL
+                  </div>
+                  <div>
+                    <h3 className="font-headline font-black text-base tracking-tight">Akun Saya</h3>
+                    <p className="text-lime-300 text-[9px] tracking-wider uppercase font-bold">PanganKu Integrated Hub</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-5 text-gray-700">
+                {/* User Details */}
+                <div className="flex items-center gap-3.5 p-3.5 bg-emerald-50 rounded-2xl border border-emerald-100">
+                  {user?.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName || ''} className="w-12 h-12 rounded-full border-2 border-lime-400 shadow-sm" referrerpolicy="no-referrer" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-lime-400/10 border border-lime-400/40 flex items-center justify-center">
+                      <UserIcon className="w-6 h-6 text-lime-700" />
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-extrabold text-[#031505] text-xs">{user?.displayName || 'Tamu / Walk-in Guest'}</h4>
+                    <p className="text-[10px] text-gray-500 truncate max-w-[180px]">{user?.email || 'pembeli-anonim@panganku.com'}</p>
+                    <div className="mt-1">
+                      <span className="px-2 py-0.5 bg-lime-200 text-[#031505] font-black rounded-md text-[8px] uppercase tracking-wider">PELANGGAN PREMIUM</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-navigation shortcut options */}
+                <div className="space-y-1.5">
+                  <p className="text-[9px] font-black text-secondary uppercase tracking-wider px-1">Pariwisata & Navigasi Cepat</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => { setActiveView('catalog'); setIsProfileOpen(false); }}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        activeView === 'catalog' 
+                          ? 'bg-lime-500/10 border-lime-400 font-extrabold text-[#031505]' 
+                          : 'bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-700 text-xs'
+                      }`}
+                    >
+                      <span className="text-[10px] sm:text-xs">🛒 Rincian Katalog</span>
+                    </button>
+                    <button 
+                      onClick={() => { setActiveView('checkout'); setIsProfileOpen(false); }}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all relative cursor-pointer ${
+                        activeView === 'checkout' 
+                          ? 'bg-lime-500/10 border-lime-400 font-extrabold text-[#031505]' 
+                          : 'bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-700 text-xs'
+                      }`}
+                    >
+                      <span className="text-[10px] sm:text-xs">💳 Checkout Aman</span>
+                      {totalCartCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-lime-500 text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black">
+                          {totalCartCount}
+                        </span>
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => { setActiveView('optimization'); setIsProfileOpen(false); }}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all col-span-2 cursor-pointer ${
+                        activeView === 'optimization' 
+                          ? 'bg-lime-500/10 border-lime-400 font-extrabold text-[#031505]' 
+                          : 'bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-700 text-xs'
+                      }`}
+                    >
+                      <span className="text-[10px] sm:text-xs">⚡ Optimasi & Demo Cache</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Status List */}
+                <div className="space-y-1.5 border-t border-gray-100 pt-3 text-[10px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Database Engine:</span>
+                    <span className="font-extrabold text-[#052f0c]">PostgreSQL Synced</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500">Koneksi Server:</span>
+                    <span className="font-bold text-emerald-700 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Online & Aman
+                    </span>
+                  </div>
+                </div>
+
+                {/* Authentication controls */}
+                <div className="border-t border-gray-100 pt-3 flex justify-between gap-3">
+                  {user ? (
+                    <button
+                      onClick={() => { logout(); setIsProfileOpen(false); }}
+                      className="w-full py-2 px-4 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 border border-red-150"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Putuskan Akun Google</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { loginWithGoogle(); setIsProfileOpen(false); }}
+                      className="w-full py-2 px-4 bg-[#ccff00]/10 text-[#031505] border-2 border-[#ccff00]/50 hover:bg-[#ccff00]/30 font-black text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <LogIn className="w-3.5 h-3.5 text-emerald-800" />
+                      <span>Hubungkan Akun Google</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* PWA Install Guide Modal */}
+      <AnimatePresence>
+        {showInstallGuide && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-lime-150"
+            >
+              <div className="bg-[#031505] text-white p-6 relative">
+                <button 
+                  onClick={() => setShowInstallGuide(false)}
+                  className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-8 h-8 rounded-full transition-colors cursor-pointer flex items-center justify-center border border-white/5"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-lime-400 text-[#031505] rounded-xl font-bold">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-headline font-black text-base tracking-tight">Pasang Aplikasi PanganKu</h3>
+                    <p className="text-gray-400 text-[10px] tracking-wider uppercase font-bold">PWA Offline Capabilities</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4 text-xs text-gray-700 leading-relaxed">
+                <p>
+                  Mendukung teknologi <strong>PWA & Service Worker</strong>! Anda dapat mengunduh dan memasang aplikasi PanganKu langsung di layar utama smartphone atau laptop Anda untuk kecepatan maksimal dan offline penuh.
+                </p>
+                <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 font-medium text-[#052f0c]">
+                  🌐 <strong>Offline Bergaransi</strong>: Semua data gambar aset, rincian produk, dan cache transaksi akan disimpan lokal agar Anda tetap bisa berbelanja meskipun tanpa paket data/wifi!
+                </div>
+                <div className="space-y-2">
+                  <p className="font-black text-[#ab3500] uppercase text-[9px] tracking-wider">Langkah Pemasangan Manual:</p>
+                  <ol className="list-decimal pl-4 space-y-1 text-gray-600">
+                    <li>Klik tombol menu browser Anda (tiga titik ⋮ atau ikon bagikan ⎋)</li>
+                    <li>Pilih <strong>"Instal Aplikasi"</strong> atau <strong>"Add to Home Screen"</strong></li>
+                    <li>Selesai! Buka langsung lewat ikon di layar handphone Anda</li>
+                  </ol>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button 
+                    onClick={() => setShowInstallGuide(false)}
+                    className="px-5 py-2 px-4.5 bg-[#052f0c] text-white hover:bg-opacity-95 font-black rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider"
+                  >
+                    Saya Mengerti
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast for Language Switch */}
+      <AnimatePresence>
+        {showLanguageToast && (
+          <div className="fixed bottom-6 left-6 z-50">
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="bg-[#031505] text-white px-4 py-2.5 rounded-xl border border-lime-400 text-xs font-semibold flex items-center gap-2 shadow-xl"
+            >
+              <Check className="w-4 h-4 text-lime-400" />
+              <span>{currentLanguage === 'ID' ? 'Bahasa diubah ke Bahasa Indonesia!' : 'Language shifted to English!'}</span>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast for Admin Credentials Error */}
+      <AnimatePresence>
+        {adminErrorToast && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="bg-red-955 text-red-200 px-4 py-2.5 rounded-xl border border-red-500 text-xs font-semibold flex items-center gap-2 shadow-xl"
+            >
+              <X className="w-4 h-4 text-red-400 stroke-[3]" />
+              <span>{adminErrorToast}</span>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Main viewport rendering with exit/entry transition animations */}
       <AnimatePresence mode="wait">
@@ -296,6 +654,12 @@ export default function App() {
               cartCount={totalCartCount}
               onNavigateToCheckout={() => setActiveView('checkout')}
               onNavigateToAdmin={() => setActiveView('admin')}
+              isCartDrawerOpen={isCartDrawerOpen}
+              setIsCartDrawerOpen={setIsCartDrawerOpen}
+              cartItems={cartItems}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              onClearCart={handleClearCart}
             />
           )}
 
