@@ -650,8 +650,27 @@ export default function App() {
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-emerald-990 font-medium">
-                    ✨ Browser Anda mendukung instalasi langsung! Ikon aplikasi akan didaftarkan ke sistem OS Anda secara resmi.
+                  <div className="space-y-2.5">
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-3 text-emerald-900 font-medium">
+                      ✨ Browser Anda mendeteksi PanganKu siap diinstal & berjalan luring secara penuh!
+                    </div>
+                    {!deferredPrompt && (
+                      <div className="bg-lime-50 border border-lime-200 rounded-2xl p-3.5 text-lime-950 space-y-2">
+                        <p className="text-[11px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                          💡 Cara Memunculkan PanganKu di Windows Search:
+                        </p>
+                        <p className="text-[10.5px] text-gray-700 leading-relaxed">
+                          Agar aplikasi terdaftar resmi di menu aplikasi sistem Windows Anda (seperti pada screenshot pencarian Windows Anda), silakan klik tombol <strong className="text-emerald-700 font-extrabold uppercase">"Hubungkan / Instal"</strong> di bar browser Anda:
+                        </p>
+                        <ul className="list-disc pl-4 text-[10px] text-gray-600 space-y-1">
+                          <li><strong>Metode 1:</strong> Ketuk ikon <strong className="text-emerald-700">⊕ (Instal / Monitor Plus)</strong> di sisi kanan bilah alamat (URL bar) browser Chrome/Edge Anda.</li>
+                          <li><strong>Metode 2:</strong> Klik menu <strong>tiga titik (⋮)</strong> di sebelah kanan atas browser, kemudian pilih opsi <strong className="text-emerald-700">"Instal PanganKu"</strong>.</li>
+                        </ul>
+                        <p className="text-[9px] text-gray-500 italic">
+                          *Setelah Anda mengeklik salah satu di atas, Windows akan mendaftarkan pintasan aplikasi secara resmi ke Windows Search Menu & Desktop.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
