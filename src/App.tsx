@@ -4,6 +4,7 @@ import CatalogView from './components/CatalogView';
 import CheckoutView from './components/CheckoutView';
 import AdminConsoleView from './components/AdminConsoleView';
 import OptimizationDemo from './components/OptimizationDemo';
+import { TRANSLATIONS } from './translations';
 import { 
   Building2, 
   ShoppingCart, 
@@ -55,6 +56,13 @@ export default function App() {
   });
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Translation lookup helper
+  const t = TRANSLATIONS[currentLanguage];
+
+  // PWA Iframe Fallback Simulator Progress
+  const [installProgress, setInstallProgress] = useState<number | null>(null);
+  const [installStep, setInstallStep] = useState<string>('');
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -96,6 +104,42 @@ export default function App() {
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
+
+  const runInstallationSimulation = () => {
+    setInstallProgress(0);
+    setInstallStep(currentLanguage === 'ID' ? 'Memulai instalasi PanganKu Enterprise...' : 'Initializing PanganKu Enterprise install...');
+    
+    const steps = currentLanguage === 'ID' ? [
+      { p: 15, text: 'Mengunduh paket aplikasi (7.4 MB)...' },
+      { p: 40, text: 'Mendaftarkan service worker untuk dukungan luring penuh...' },
+      { p: 70, text: 'Membuat shortcut desktop & ikon resolusi tinggi (512x512)...' },
+      { p: 90, text: 'Meregistrasikan PanganKu ke database indeks pencarian sistem...' },
+      { p: 100, text: 'Aplikasi terpasang resmi di perangkat Anda!' }
+    ] : [
+      { p: 15, text: 'Downloading application package (7.4 MB)...' },
+      { p: 40, text: 'Registering service worker for full offline support...' },
+      { p: 70, text: 'Generating desktop shortcut & high-res branding (512x512)...' },
+      { p: 90, text: 'Indexing application into local system search directories...' },
+      { p: 100, text: 'Application officially registered on your system!' }
+    ];
+
+    let currentStepIdx = 0;
+    const interval = setInterval(() => {
+      if (currentStepIdx < steps.length) {
+        setInstallProgress(steps[currentStepIdx].p);
+        setInstallStep(steps[currentStepIdx].text);
+        currentStepIdx++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsPwaInstalled(true);
+          localStorage.setItem('panganku_installed', 'true');
+          setInstallProgress(null);
+          setShowInstallGuide(false);
+        }, 1200);
+      }
+    }, 850);
+  };
 
   const handleInstallClick = () => {
     if (deferredPrompt) {
@@ -313,7 +357,7 @@ export default function App() {
               id="admin-nav-link"
             >
               <Lock className="w-4 h-4 text-[#FF6B35] stroke-[2.5]" />
-              <span>ADMIN</span>
+              <span>{t.nav_admin}</span>
             </button>
           </div>
 
@@ -332,7 +376,7 @@ export default function App() {
                 id="pwa-installed-nav-btn"
               >
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
-                <span>APLIKASI TERPASANG</span>
+                <span>{t.nav_app_installed}</span>
               </button>
             ) : (
               <button 
@@ -341,7 +385,7 @@ export default function App() {
                 id="pwa-install-nav-btn"
               >
                 <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>PASANG APLIKASI</span>
+                <span>{t.nav_install_app}</span>
               </button>
             )}
 
@@ -376,7 +420,7 @@ export default function App() {
                   <UserIcon className="w-3.5 h-3.5 text-[#FF6B35]" />
                 </div>
               )}
-              <span className="tracking-widest uppercase text-[11px]">AKUN SAYA</span>
+              <span className="tracking-widest uppercase text-[11px]">{t.nav_my_account}</span>
               {user && <span className="w-1.5 h-1.5 bg-[#FF6B35] rounded-full animate-pulse shrink-0"></span>}
             </button>
 
@@ -387,7 +431,7 @@ export default function App() {
               id="start-now-nav-btn"
             >
               <ShoppingCart className="w-4 h-4 stroke-[2.5]" />
-              <span></span>
+              <span>{t.nav_start_shopping}</span>
             </button>
           </div>
 
@@ -405,7 +449,7 @@ export default function App() {
           >
             <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-center gap-2.5 text-center text-[10px] md:text-xs font-black tracking-wider uppercase">
               <span className="inline-block w-2 h-2 rounded-full bg-white animate-pulse"></span>
-              <span>🔌 Mode Luring Aktif: Menjelajah PanganKu tanpa internet. Keranjang belanja tersimpan aman di perangkat Anda.</span>
+              <span>{t.offline_alert_banner}</span>
             </div>
           </motion.div>
         )}
@@ -781,6 +825,7 @@ export default function App() {
               onUpdateQuantity={handleUpdateQuantity}
               onRemoveItem={handleRemoveItem}
               onClearCart={handleClearCart}
+              currentLanguage={currentLanguage}
             />
           )}
 

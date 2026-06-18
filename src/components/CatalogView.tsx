@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, CartItem } from '../types';
 import { INITIAL_PRODUCTS } from '../data';
+import { TRANSLATIONS } from '../translations';
 import { 
   ShoppingBag, 
   Search, 
@@ -30,6 +31,7 @@ interface CatalogViewProps {
   onUpdateQuantity?: (productId: string, quantity: number) => void;
   onRemoveItem?: (productId: string) => void;
   onClearCart?: () => void;
+  currentLanguage?: 'ID' | 'EN';
 }
 
 export default function CatalogView({
@@ -42,8 +44,10 @@ export default function CatalogView({
   cartItems = [],
   onUpdateQuantity = () => {},
   onRemoveItem = () => {},
-  onClearCart = () => {}
+  onClearCart = () => {},
+  currentLanguage = 'ID'
 }: CatalogViewProps) {
+  const t = TRANSLATIONS[currentLanguage];
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'bumbu' | 'siap-saji' | 'minuman'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -96,7 +100,7 @@ export default function CatalogView({
               <Check className="w-4 h-4 text-white" />
             </div>
             <span className="font-medium text-sm">
-              Berhasil menambahkan <strong>{addedPopup}</strong> ke keranjang!
+              {currentLanguage === 'ID' ? 'Berhasil menambahkan ' : 'Successfully added '} <strong>{addedPopup}</strong> {currentLanguage === 'ID' ? ' ke keranjang!' : ' to cart!'}
             </span>
           </motion.div>
         )}
@@ -108,7 +112,7 @@ export default function CatalogView({
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => setSelectedCategory('all')}>
             <span className="text-xl md:text-2xl font-black text-primary font-headline tracking-tight flex items-center gap-1">
               <ShoppingBag className="w-6 h-6 text-accent fill-accent" />
-              PanganKu<span className="text-secondary font-medium text-base md:text-lg">Enterprise</span>
+              {t.nav_brand}<span className="text-secondary font-medium text-base md:text-lg">{t.nav_enterprise}</span>
             </span>
           </div>
 
@@ -119,10 +123,10 @@ export default function CatalogView({
                 selectedCategory === 'all' ? 'border-secondary text-secondary font-bold' : 'border-transparent text-gray-500 hover:text-secondary'
               }`}
             >
-              Beranda
+              {t.nav_home}
             </button>
-            <a href="#bahan-utama" className="text-gray-500 hover:text-secondary transition-colors">Katalog Utama</a>
-            <a href="#bahan-pendukung" className="text-gray-500 hover:text-secondary transition-colors">Bahan Pendukung</a>
+            <a href="#bahan-utama" className="text-gray-500 hover:text-secondary transition-colors">{t.nav_catalog_main}</a>
+            <a href="#bahan-pendukung" className="text-gray-500 hover:text-secondary transition-colors">{t.nav_catalog_supporting}</a>
           </nav>
         </div>
 
@@ -133,7 +137,7 @@ export default function CatalogView({
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
-              placeholder="Cari bahan pokok..." 
+              placeholder={t.nav_search_placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-primary focus:border-transparent outline-none w-56 text-xs transition-all"
@@ -161,7 +165,7 @@ export default function CatalogView({
             id="admin-panel-btn"
           >
             <User className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Konsol Admin</span>
+            <span className="hidden md:inline">{t.nav_admin_console}</span>
           </button>
         </div>
       </header>
@@ -183,20 +187,20 @@ export default function CatalogView({
             <div className="max-w-2xl text-white flex flex-col items-start justify-center text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-white text-xs font-semibold stroke-white border border-white/20 select-none">
                 <span className="text-[#a3e635]">⚡</span>
-                <span className="font-extrabold tracking-wider text-white">Pangan Segar Bergaransi Resmi</span>
+                <span className="font-extrabold tracking-wider text-white">{t.hero_guarantee}</span>
               </div>
               <h1 className="font-headline text-3xl md:text-5xl font-extrabold leading-tight text-white tracking-tight mt-4">
-                Penuhi Kebutuhan Dapur Anda dengan <span className="text-yellow-300 font-extrabold drop-shadow">Aman</span>, <span className="text-[#fe6a34] underline decoration-wavy decoration-[#fe6a34] font-extrabold">Hemat</span>, dan <span className="text-emerald-400 font-extrabold">Cepat</span>.
+                {t.hero_title_part1}<span className="text-yellow-300 font-extrabold drop-shadow">{t.hero_title_safe}</span>{t.hero_title_part2}<span className="text-[#fe6a34] underline decoration-wavy decoration-[#fe6a34] font-extrabold">{t.hero_title_save}</span>{t.hero_title_part3}<span className="text-emerald-400 font-extrabold">{t.hero_title_fast}</span>{t.hero_title_dot}
               </h1>
               <p className="text-sm md:text-base font-medium text-white/80 leading-relaxed max-w-lg mt-4">
-                Distribusi pangan skala enterprise dengan jaminan mutu terbaik dari petani binaan, didukung logistik pengiriman real-time terenkripsi.
+                {t.hero_description}
               </p>
               <div className="mt-8">
                 <a 
                   href="#bahan-utama" 
                   className="bg-[#FF6B35] hover:bg-[#E55A2B] text-white px-8 py-3.5 rounded-xl font-bold transition-colors duration-200 ease-in-out shadow-lg text-sm text-center inline-block"
                 >
-                  Mulai Belanja
+                  {t.hero_button}
                 </a>
               </div>
             </div>
@@ -210,11 +214,11 @@ export default function CatalogView({
           <section id="bahan-utama" className="scroll-mt-20">
             <div className="flex justify-between items-end mb-8 border-l-4 border-primary pl-4">
               <div>
-                <h2 className="font-headline text-2xl font-black text-primary uppercase">BAHAN POKOK UTAMA</h2>
-                <p className="text-gray-500 text-xs md:text-sm">Kebutuhan dasar dengan mutu premium pilihan terbaik.</p>
+                <h2 className="font-headline text-2xl font-black text-primary uppercase">{t.cat_main_title}</h2>
+                <p className="text-gray-500 text-xs md:text-sm">{t.cat_main_subtitle}</p>
               </div>
               <a href="#bahan-pendukung" className="text-secondary font-bold text-xs hover:underline flex items-center gap-1 transition-all">
-                Bahan Pendukung <ArrowRight className="w-4 h-4" />
+                {t.nav_catalog_supporting} <ArrowRight className="w-4 h-4" />
               </a>
             </div>
 
@@ -225,7 +229,7 @@ export default function CatalogView({
               {mainBahanPokok.length > 0 && (
                 <div className="md:col-span-2 md:row-span-1 group relative overflow-hidden bg-white rounded-2xl border border-emerald-100 p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:-translate-y-1.5 ring-2 ring-emerald-500/10">
                   <span className="absolute top-4 right-4 bg-secondary text-white px-3 py-1 rounded-full text-[10px] font-bold z-10 tracking-widest uppercase">
-                    🔥 TERLARIS MINGGU INI
+                    {t.cat_featured_badge}
                   </span>
                   
                   <div className="relative h-64 md:h-72 mb-4 overflow-hidden rounded-xl bg-gray-50">
@@ -268,7 +272,7 @@ export default function CatalogView({
                     id={`add-featured-${mainBahanPokok[0].id}`}
                   >
                     <ShoppingCart className="w-4 h-4" />
-                    Tambah ke Keranjang
+                    {t.cat_add_to_cart}
                   </button>
                 </div>
               )}
@@ -289,7 +293,7 @@ export default function CatalogView({
                         />
                       </div>
                       <span className="text-[10px] font-bold uppercase text-secondary tracking-widest block mb-1">
-                        Bahan Utama • {item.unit}
+                        {currentLanguage === 'ID' ? 'Bahan Utama' : 'Main Staple'} • {item.unit}
                       </span>
                       <h4 className="font-headline text-sm font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
                         {item.name}
@@ -308,7 +312,7 @@ export default function CatalogView({
                         className="w-full border border-primary text-primary hover:bg-primary hover:text-white py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
                         id={`add-${item.id}`}
                       >
-                        Tambah
+                        {t.cat_add}
                       </button>
                     </div>
                   </div>
@@ -322,17 +326,17 @@ export default function CatalogView({
           <section id="bahan-pendukung" className="pt-4 scroll-mt-20">
             <div className="mb-6">
               <h2 className="font-headline text-2xl font-black text-primary uppercase">
-                BAHAN PENDUKUNG / PELENGKAP
+                {t.cat_supporting_title}
               </h2>
-              <p className="text-gray-500 text-xs md:text-sm mt-1">Lengkapi kebutuhan kreasi masakan Anda di rumah dengan harga super hemat.</p>
+              <p className="text-gray-500 text-xs md:text-sm mt-1">{t.cat_supporting_subtitle}</p>
               
               {/* Category Filter Pills */}
               <div className="flex gap-2.5 mt-6 overflow-x-auto pb-2 scrollbar-hide">
                 {[
-                  { id: 'all', label: 'Semua Produk' },
-                  { id: 'bumbu', label: 'Bumbu & Sayur' },
-                  { id: 'siap-saji', label: 'Lauk & Siap Saji' },
-                  { id: 'minuman', label: 'Minuman Segar' }
+                  { id: 'all', label: t.filter_all },
+                  { id: 'bumbu', label: t.filter_seasoning },
+                  { id: 'siap-saji', label: t.filter_ready_to_eat },
+                  { id: 'minuman', label: t.filter_drinks }
                 ].map((cat) => (
                   <button
                     key={cat.id}
@@ -380,8 +384,8 @@ export default function CatalogView({
                   >
                     {filteredSupporting.length === 0 ? (
                       <div className="col-span-full py-16 text-center space-y-2">
-                        <p className="text-gray-400 text-sm font-medium">Bahan tersebut tidak dapat ditemukan.</p>
-                        <p className="text-xs text-gray-300">Harap mencari dengan istilah kata kunci produk lain.</p>
+                        <p className="text-gray-400 text-sm font-medium">{t.search_no_results}</p>
+                        <p className="text-xs text-gray-300">{t.search_helper}</p>
                       </div>
                     ) : (
                       filteredSupporting.map((product) => (
@@ -419,7 +423,7 @@ export default function CatalogView({
                               className="w-full border border-gray-200 text-gray-600 hover:bg-primary hover:text-white hover:border-transparent py-1.5 rounded-lg font-bold text-xs transition-all active:scale-95 cursor-pointer"
                               id={`add-badge-${product.id}`}
                             >
-                              Tambah
+                              {t.cat_add}
                             </button>
                           </div>
                         </div>
@@ -435,31 +439,31 @@ export default function CatalogView({
           <section className="bg-emerald-50/50 rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 border border-emerald-100 animate-fadeIn">
             <div className="md:max-w-2xl space-y-3">
               <span className="px-3 py-1 bg-emerald-100 text-[#052f0c] rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit">
-                🥬 Rantai Pasok Segar & Amanah
+                {t.support_badge}
               </span>
               <h3 className="font-headline text-lg md:text-2xl font-black text-primary">
-                Dukungan Nyata untuk Petani Lokal & Kesehatan Keluarga Anda
+                {t.support_title}
               </h3>
               <p className="text-gray-600 text-xs md:text-sm leading-relaxed">
-                Setiap sayur, buah, dan bahan pangan sehat yang Anda beli di <strong>PanganKu</strong> diproduksi langsung oleh kelompok tani lokal binaan kami. Dengan sistem logistik yang cepat, higienis, dan terpercaya, kami menjamin pesanan tiba di dapur Anda dalam kondisi kesegaran maksimal. Belanja sehat sekaligus menggerakkan ekonomi petani daerah!
+                {t.support_description}
               </p>
               <div className="flex flex-wrap gap-2 pt-2">
                 <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-[#052f0c] shadow-xs">
-                  🥗 100% Organik & Segar
+                  {t.support_feat1}
                 </span>
                 <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-[#052f0c] shadow-xs">
-                  👨‍🌾 Dukung Petani Lokal Binaan
+                  {t.support_feat2}
                 </span>
                 <span className="px-3 py-1 bg-white rounded-lg border border-emerald-100 text-[10px] font-bold text-[#052f0c] shadow-xs">
-                  🚚 Pengiriman Cepat & Higienis
+                  {t.support_feat3}
                 </span>
               </div>
             </div>
             
             <div className="w-full md:w-56 h-36 bg-primary rounded-2xl flex flex-col items-center justify-center p-4 text-white text-center shadow-lg relative overflow-hidden">
               <Heart className="w-10 h-10 text-secondary fill-secondary animate-[pulse_2s_infinite]" />
-              <span className="font-headline text-base font-extrabold mt-3">Pelanggan Setia</span>
-              <span className="text-[10px] text-emerald-250">Nutrisi Terbaik dari Alam</span>
+              <span className="font-headline text-base font-extrabold mt-3">{t.support_loyal_customer}</span>
+              <span className="text-[10px] text-emerald-250">{t.support_nutrition}</span>
               {/* background vector effect */}
               <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-white/5 rounded-full" />
             </div>
@@ -473,21 +477,21 @@ export default function CatalogView({
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-col gap-1 items-center md:items-start">
             <span className="font-headline font-black text-lg text-primary">
-              PanganKu <span className="text-secondary font-medium text-sm">Enterprise</span>
+              {t.nav_brand} <span className="text-secondary font-medium text-sm">{t.nav_enterprise}</span>
             </span>
-            <p className="text-xs text-gray-400">© 2026 PanganKu Enterprise. Hak Cipta Dilindungi Undang-Undang.</p>
+            <p className="text-xs text-gray-400">{t.footer_rights}</p>
           </div>
           
           <div className="flex flex-wrap justify-center gap-6 text-xs text-gray-500 font-medium">
-            <a href="#" className="hover:text-primary transition-colors">Kebijakan Privasi</a>
-            <a href="#" className="hover:text-primary transition-colors">Syarat & Ketentuan</a>
-            <a href="#" className="hover:text-primary transition-colors">Etika Rantai Pasok</a>
-            <a href="#" className="hover:text-primary transition-colors">Hubungi Bantuan</a>
+            <a href="#" className="hover:text-primary transition-colors">{t.footer_privacy}</a>
+            <a href="#" className="hover:text-primary transition-colors">{t.footer_terms}</a>
+            <a href="#" className="hover:text-primary transition-colors">{t.footer_ethics}</a>
+            <a href="#" className="hover:text-primary transition-colors">{t.footer_support}</a>
           </div>
           
           <div className="flex gap-4">
             <span className="text-xs text-gray-400 flex items-center gap-1 hover:text-primary cursor-pointer">
-              🌐 Bahasa Indonesia
+              {t.footer_language_badge}
             </span>
           </div>
         </div>
@@ -518,10 +522,10 @@ export default function CatalogView({
               <div className="bg-[#031505] text-white p-5 flex items-center justify-between border-b border-white/10 select-none shrink-0">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-lime-400 text-[#031505] rounded-xl font-black text-[10px] tracking-widest uppercase">
-                    BASKET
+                    {currentLanguage === 'ID' ? 'KERANJANG' : 'BASKET'}
                   </div>
                   <div>
-                    <h3 className="font-headline font-black text-sm md:text-base tracking-tight uppercase">Keranjang Belanja</h3>
+                    <h3 className="font-headline font-black text-sm md:text-base tracking-tight uppercase">{t.cart_title}</h3>
                     <p className="text-gray-400 text-[9px] tracking-wider uppercase font-bold text-lime-400">PanganKu Logistics Drawer</p>
                   </div>
                 </div>
@@ -540,20 +544,22 @@ export default function CatalogView({
                     <div className="p-4 bg-emerald-50 rounded-full border border-emerald-100 flex items-center justify-center text-primary mb-4 animate-bounce">
                       <ShoppingBag className="w-10 h-10 stroke-[1.5]" />
                     </div>
-                    <p className="font-extrabold text-sm text-[#031505]">Keranjang Belanja Kosong</p>
+                    <p className="font-extrabold text-sm text-[#031505]">{t.cart_empty_title}</p>
                     <p className="text-xs mt-1 text-gray-500 max-w-xs leading-relaxed">
-                      Silakan jelajahi katalog bahan pangan pokok di bawah dan klik <strong>Tambah</strong> untuk mengisi logistik Anda.
+                      {t.cart_empty_desc}
                     </p>
                     <button
                       onClick={() => setIsCartDrawerOpen(false)}
                       className="mt-6 px-4 py-2 bg-emerald-100 text-primary text-xs font-black rounded-lg hover:bg-[#FF6B35] hover:text-white transition-all cursor-pointer"
                     >
-                      Mulai Belanja Sekarang
+                      {t.cart_empty_btn}
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Detail Barang Pesanan ({cartItems.length})</p>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
+                      {currentLanguage === 'ID' ? `Detail Barang Pesanan (${cartItems.length})` : `Order Item Details (${cartItems.length})`}
+                    </p>
                     {cartItems.map((item) => (
                       <div 
                         key={item.product.id} 
@@ -596,7 +602,7 @@ export default function CatalogView({
                           <button 
                             onClick={() => onRemoveItem(item.product.id)}
                             className="text-gray-450 hover:text-red-650 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Hapus item"
+                            title={currentLanguage === 'ID' ? "Hapus item" : "Remove item"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -612,17 +618,17 @@ export default function CatalogView({
                 <div className="border-t border-gray-150 p-5 bg-emerald-50/20 space-y-4 shrink-0 select-none">
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center text-xs text-gray-500">
-                      <span>Total Jenis Barang:</span>
-                      <span className="font-extrabold text-gray-900">{cartItems.length} item</span>
+                      <span>{t.cart_item_types}</span>
+                      <span className="font-extrabold text-gray-900">{cartItems.length} {currentLanguage === 'ID' ? 'item' : 'items'}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs text-gray-500">
-                      <span>Total Kuantitas:</span>
+                      <span>{t.cart_total_qty}</span>
                       <span className="font-extrabold text-gray-900">
                         {cartItems.reduce((acc, item) => acc + item.quantity, 0)} Pcs
                       </span>
                     </div>
                     <div className="flex justify-between items-end pt-2 border-t border-dashed border-gray-200">
-                      <span className="font-bold text-xs text-gray-800">Subtotal Logistik:</span>
+                      <span className="font-bold text-xs text-gray-800">{t.cart_subtotal}</span>
                       <span className="font-black text-primary text-base md:text-lg">
                         Rp {cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString('id-ID')}
                       </span>
@@ -635,7 +641,7 @@ export default function CatalogView({
                       onClick={onClearCart}
                       className="py-2.5 px-2 border border-gray-200 hover:bg-gray-100 text-gray-600 font-bold text-xs rounded-xl transition-all cursor-pointer text-center"
                     >
-                      Batal Semua
+                      {t.cart_cancel_all}
                     </button>
                     <button 
                       onClick={() => {
@@ -644,7 +650,7 @@ export default function CatalogView({
                       }}
                       className="col-span-2 py-2.5 px-4 bg-[#FF6B35] hover:bg-[#E55A2B] text-white font-extrabold text-xs rounded-md transition-colors duration-200 shadow-[0_4px_12px_rgba(255,107,53,0.3)] hover:shadow-[0_5px_15px_rgba(255,107,53,0.5)] cursor-pointer text-center flex items-center justify-center gap-1.5 uppercase tracking-wider"
                     >
-                      <span>Checkout Aman</span>
+                      <span>{t.cart_checkout}</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
