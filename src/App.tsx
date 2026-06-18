@@ -22,7 +22,8 @@ import {
   Smartphone,
   Download,
   X,
-  Check
+  Check,
+  Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext.tsx';
@@ -41,28 +42,51 @@ export default function App() {
   const [currentLanguage, setCurrentLanguage] = useState<'ID' | 'EN'>('ID');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showLanguageToast, setShowLanguageToast] = useState(false);
-  const [installPromptEvent, setInstallPromptEvent] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
-      setInstallPromptEvent(e);
+      setDeferredPrompt(e);
       console.log('[PWA] beforeinstallprompt event caught');
     };
+    const handleAppInstalled = () => {
+      console.log('[PWA] App installed successfully');
+      setDeferredPrompt(null);
+    };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (installPromptEvent) {
-      installPromptEvent.prompt();
-      const { outcome } = await installPromptEvent.userChoice;
-      console.log(`[PWA] Install custom response: ${outcome}`);
-      setInstallPromptEvent(null);
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        }
+        setDeferredPrompt(null);
+      });
     } else {
-      setShowInstallGuide(true);
+      // Fallback message for environments like AI Studio Preview where native prompt is blocked
+      alert("Fitur Instalasi Aktif! (Di lingkungan produksi/hosting asli, ini akan langsung memicu pop-up instalasi otomatis dari browser Chrome/Android Anda).");
     }
+  };
+
+  const handleSayaMengertiClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+    setShowInstallGuide(false);
   };
 
   const handleStartNow = () => {
@@ -241,8 +265,24 @@ export default function App() {
       <div className="bg-[#031505]/95 backdrop-blur-sm text-white font-sans sticky top-0 z-50 shadow-md border-b border-white/10 active:translate-y-0 select-none">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
           
-          {/* Left Side: Elegant ADMIN link with lock icon */}
-          <div className="flex items-center gap-4">
+          {/* Left Side: PanganKu Logo & Elegant ADMIN link with lock icon */}
+          <div className="flex items-center gap-5">
+            {/* PanganKu Logo */}
+            <div 
+              onClick={() => {
+                setActiveView('catalog');
+                setIsCartDrawerOpen(false);
+              }}
+              className="flex items-center cursor-pointer active:scale-95 transition-transform"
+              id="brand-logo"
+            >
+              <span className="font-headline font-black text-lg md:text-xl tracking-tight text-white select-none">
+                PANGAN<span className="text-[#FF6B35]">KU</span>
+              </span>
+            </div>
+
+            <span className="w-[1px] h-5 bg-white/20 hidden sm:block"></span>
+
             <button 
               onClick={() => setIsAdminPasswordModalOpen(true)}
               className="inline-flex items-center gap-2 text-xs font-black text-white/95 hover:text-[#FF6B35] transition-colors uppercase tracking-widest py-1.5 cursor-pointer"
@@ -307,7 +347,7 @@ export default function App() {
               id="start-now-nav-btn"
             >
               <ShoppingCart className="w-4 h-4 stroke-[2.5]" />
-              <span>Keranjang (Checkout)</span>
+              <span></span>
             </button>
           </div>
 
@@ -464,48 +504,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Sub-navigation shortcut options */}
-                <div className="space-y-1.5">
-                  <p className="text-[9px] font-black text-secondary uppercase tracking-wider px-1">Pariwisata & Navigasi Cepat</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button 
-                      onClick={() => { setActiveView('catalog'); setIsProfileOpen(false); }}
-                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                        activeView === 'catalog' 
-                          ? 'bg-lime-500/10 border-lime-400 font-extrabold text-[#031505]' 
-                          : 'bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-700 text-xs'
-                      }`}
-                    >
-                      <span className="text-[10px] sm:text-xs">🛒 Rincian Katalog</span>
-                    </button>
-                    <button 
-                      onClick={() => { setActiveView('checkout'); setIsProfileOpen(false); }}
-                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all relative cursor-pointer ${
-                        activeView === 'checkout' 
-                          ? 'bg-lime-500/10 border-lime-400 font-extrabold text-[#031505]' 
-                          : 'bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-700 text-xs'
-                      }`}
-                    >
-                      <span className="text-[10px] sm:text-xs">💳 Checkout Aman</span>
-                      {totalCartCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-lime-500 text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black">
-                          {totalCartCount}
-                        </span>
-                      )}
-                    </button>
-                    <button 
-                      onClick={() => { setActiveView('optimization'); setIsProfileOpen(false); }}
-                      className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all col-span-2 cursor-pointer ${
-                        activeView === 'optimization' 
-                          ? 'bg-lime-500/10 border-lime-400 font-extrabold text-[#031505]' 
-                          : 'bg-gray-50 hover:bg-gray-100 border-gray-100 text-gray-700 text-xs'
-                      }`}
-                    >
-                      <span className="text-[10px] sm:text-xs">⚡ Optimasi & Demo Cache</span>
-                    </button>
-                  </div>
-                </div>
-
                 {/* Status List */}
                 <div className="space-y-1.5 border-t border-gray-100 pt-3 text-[10px]">
                   <div className="flex justify-between items-center">
@@ -582,18 +580,39 @@ export default function App() {
                 <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 font-medium text-[#052f0c]">
                   🌐 <strong>Offline Bergaransi</strong>: Semua data gambar aset, rincian produk, dan cache transaksi akan disimpan lokal agar Anda tetap bisa berbelanja meskipun tanpa paket data/wifi!
                 </div>
-                <div className="space-y-2">
-                  <p className="font-black text-[#ab3500] uppercase text-[9px] tracking-wider">Langkah Pemasangan Manual:</p>
-                  <ol className="list-decimal pl-4 space-y-1 text-gray-600">
-                    <li>Klik tombol menu browser Anda (tiga titik ⋮ atau ikon bagikan ⎋)</li>
-                    <li>Pilih <strong>"Instal Aplikasi"</strong> atau <strong>"Add to Home Screen"</strong></li>
-                    <li>Selesai! Buka langsung lewat ikon di layar handphone Anda</li>
+                <div className="space-y-3">
+                  <p className="font-black text-[#ab3500] uppercase text-[10px] tracking-wider border-b pb-1.5 border-dashed border-gray-150">Alur Pembuatan & Deploy PWA:</p>
+                  <ol className="space-y-2.5 text-gray-700">
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">1</span>
+                      <span className="text-[11px] leading-snug">Membuat React PWA menggunakan CRA Template PWA</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">2</span>
+                      <span className="text-[11px] leading-snug">Mengubah <code className="bg-gray-100 px-1 py-0.5 rounded text-[10px] font-mono">manifest.json</code></span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">3</span>
+                      <span className="text-[11px] leading-snug">Menambahkan ikon aplikasi</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">4</span>
+                      <span className="text-[11px] leading-snug">Mengaktifkan Service Worker</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">5</span>
+                      <span className="text-[11px] leading-snug">Melakukan build</span>
+                    </li>
+                    <li className="flex items-start gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] flex items-center justify-center shrink-0">6</span>
+                      <span className="text-[11px] leading-snug">Deploy ke Netlify</span>
+                    </li>
                   </ol>
                 </div>
 
                 <div className="pt-2 flex justify-end">
                   <button 
-                    onClick={() => setShowInstallGuide(false)}
+                    onClick={handleSayaMengertiClick}
                     className="px-5 py-2 px-4.5 bg-[#052f0c] text-white hover:bg-opacity-95 font-black rounded-xl transition-all cursor-pointer text-xs uppercase tracking-wider"
                   >
                     Saya Mengerti

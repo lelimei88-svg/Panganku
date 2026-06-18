@@ -244,6 +244,71 @@ function OptimizationPanelContent() {
           </div>
         </div>
       </div>
+
+      {/* PWA Implementation Steps based on screenshot */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-xs space-y-6">
+        <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+          <div className="p-2.5 bg-emerald-50 text-emerald-800 rounded-2xl">
+            <LayoutGrid className="w-5 h-5 text-emerald-800" />
+          </div>
+          <div>
+            <h3 className="font-headline font-black text-base text-[#052f0c]">
+              Alur Pengembangan & Integrasi PWA PanganKu
+            </h3>
+            <p className="text-[10px] text-gray-400 font-mono">PWA SPECIFICATION & DEPLOYMENT CHECKLIST</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full bg-emerald-100 text-[#052f0c] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-800">Inisiasi React PWA</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Membuat React PWA menggunakan CRA Template PWA.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full bg-emerald-100 text-[#052f0c] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-800">Konfigurasi Manifest</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Mengubah <code className="bg-white px-1 py-0.5 border border-gray-200 rounded text-[10px] font-mono">manifest.json</code>.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full bg-emerald-100 text-[#052f0c] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-800">Menambahkan Ikon</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Menambahkan ikon aplikasi beresolusi tinggi untuk home screen & splash.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full bg-emerald-100 text-[#052f0c] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">4</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-800">Mengaktifkan Service Worker</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Mengaktifkan Service Worker untuk luring tak terputus & sistem caching.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full bg-emerald-100 text-[#052f0c] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">5</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-gray-800">Melakukan Build</p>
+              <p className="text-[11px] text-gray-500 leading-tight">Mempersiapkan rilis produksi statis optimal dengan meminimasi bundel.</p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-150 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center shrink-0 mt-0.5 animate-pulse">6</span>
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-emerald-950">Penyebaran Produksi</p>
+              <p className="text-[11px] text-emerald-700 leading-tight">Deploy ke Netlify secara global untuk distribusi PWA yang aman & cepat.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
