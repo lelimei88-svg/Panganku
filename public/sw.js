@@ -16,26 +16,26 @@ const ASSETS_TO_CACHE = [
   '/images/teh-kemasan.jpg'
 ];
 
-// Install Event
+// Install Event - Pre-cache shell and products
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[Service Worker] Caching app shell and core assets');
+        console.log('[Service Worker] Pre-caching core app shell and products');
         return cache.addAll(ASSETS_TO_CACHE);
       })
       .then(() => self.skipWaiting())
   );
 });
 
-// Activate Event
+// Activate Event - Clean up stale caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('[Service Worker] Clearing old cache:', cache);
+            console.log('[Service Worker] Cleaning old cache:', cache);
             return caches.delete(cache);
           }
         })
@@ -44,7 +44,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch Event with Network-First fallback to Cache strategy
+// Fetch Event with robust Stale-While-Revalidate caching strategy
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') {
@@ -53,42 +53,55 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Bypass API routes and HMR scripts
-  if (url.pathname.startsWith('/api') || url.hostname === 'localhost' && url.port === '3000' && url.pathname.includes('hot')) {
+  // Bypass API routes, Websockets, and HMR hot scripts
+  if (
+    url.pathname.startsWith('/api') || 
+    url.pathname.includes('socket.io') || 
+    url.pathname.includes('vite') ||
+    (url.hostname === 'localhost' && url.port === '3000' && url.pathname.includes('hot'))
+  ) {
     return;
   }
 
-  // Check if request is same-origin or an external image resource (e.g. Google User Content or Unsplash)
+  // Handle caching for same-origin assets, CDN styles, and external resource assets (like images or Web Fonts)
   const isSameOrigin = url.origin === self.location.origin;
-  const isExternalImage = url.hostname.includes('googleusercontent.com') || url.hostname.includes('unsplash.com') || event.request.destination === 'image';
+  const isExternalAsset = 
+    url.hostname.includes('googleusercontent.com') || 
+    url.hostname.includes('unsplash.com') || 
+    url.hostname.includes('googleapis.com') || 
+    url.hostname.includes('gstatic.com') ||
+    event.request.destination === 'image' ||
+    event.request.destination === 'font' ||
+    event.request.destination === 'style' ||
+    event.request.destination === 'script';
 
-  if (!isSameOrigin && !isExternalImage) {
+  if (!isSameOrigin && !isExternalAsset) {
     return;
   }
 
+  // Stale-While-Revalidate strategy: Serve cached copy immediately, and fetch new state in the background
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // If valid response (status 200 or status 0 for opaque cross-origin requests), clone and save to cache
-        if (response && (response.status === 200 || response.status === 0)) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        // If network fails (perfect offline support), serve from cache
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && (networkResponse.status === 200 || networkResponse.status === 0)) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-          // If navigating but offline, serve fallback index.html
-          if (event.request.mode === 'navigate') {
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.warn('[Service Worker] Offline fetch fallback:', error);
+          // Standard navigate fallback if offline and no cached document exists
+          if (!cachedResponse && event.request.mode === 'navigate') {
             return caches.match('/');
           }
+          return null;
         });
-      })
+
+      return cachedResponse || fetchPromise;
+    })
   );
 });

@@ -396,31 +396,15 @@ export default function App() {
                 {t.nav_catalog_supporting}
               </button>
 
-              {/* PWA status badge right next to Bahan Pendukung link */}
-              {isPwaInstalled ? (
-                <span 
-                  onClick={() => {
-                    alert(currentLanguage === 'ID' 
-                      ? "Aplikasi PanganKu sudah berhasil terpasang di perangkat Anda & siap digunakan tanpa internet (offline)."
-                      : "PanganKu app is successfully installed & ready for full offline use."
-                    );
-                  }}
-                  className="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold text-[10px] tracking-wide rounded-lg flex items-center gap-1 cursor-pointer select-none"
-                  id="pwa-installed-nav-btn"
-                >
-                  <Check className="w-3 h-3 stroke-[3]" />
-                  <span>{t.nav_app_installed}</span>
-                </span>
-              ) : (
-                <button 
-                  onClick={handleInstallClick}
-                  className="px-2.5 py-1 border border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-bold text-[10px] tracking-wide rounded-lg transition-all duration-300 cursor-pointer flex items-center gap-1"
-                  id="pwa-install-nav-btn"
-                >
-                  <Smartphone className="w-3 h-3" />
-                  <span>{t.nav_install_app}</span>
-                </button>
-              )}
+              {/* Active, production-grade orange outline PWA installation button */}
+              <button 
+                onClick={handleInstallClick}
+                className="px-2.5 py-1 border border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-bold text-[10px] tracking-wide rounded-lg transition-all duration-300 cursor-pointer flex items-center gap-1 uppercase"
+                id="pwa-install-nav-btn"
+              >
+                <Smartphone className="w-3 h-3" />
+                <span>{currentLanguage === 'ID' ? 'PASANG APLIKASI' : 'INSTALL APP'}</span>
+              </button>
             </nav>
           </div>
 
