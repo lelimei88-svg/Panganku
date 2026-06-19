@@ -32,6 +32,10 @@ interface CatalogViewProps {
   onRemoveItem?: (productId: string) => void;
   onClearCart?: () => void;
   currentLanguage?: 'ID' | 'EN';
+  selectedCategory: 'all' | 'bumbu' | 'siap-saji' | 'minuman';
+  setSelectedCategory: (category: 'all' | 'bumbu' | 'siap-saji' | 'minuman') => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export default function CatalogView({
@@ -45,11 +49,13 @@ export default function CatalogView({
   onUpdateQuantity = () => {},
   onRemoveItem = () => {},
   onClearCart = () => {},
-  currentLanguage = 'ID'
+  currentLanguage = 'ID',
+  selectedCategory,
+  setSelectedCategory,
+  searchQuery,
+  setSearchQuery
 }: CatalogViewProps) {
   const t = TRANSLATIONS[currentLanguage];
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'bumbu' | 'siap-saji' | 'minuman'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [addedPopup, setAddedPopup] = useState<string | null>(null);
 
@@ -69,7 +75,7 @@ export default function CatalogView({
 
   // Filter products
   const rawMainBahanPokok = INITIAL_PRODUCTS.filter(p => p.category === 'pokok');
-  // Enhance main staples with translations
+  // Enhance main staples with translations & filter by searchQuery
   const mainBahanPokok = rawMainBahanPokok.map(item => {
     const meta = getProductMeta(item);
     return {
@@ -78,6 +84,9 @@ export default function CatalogView({
       unit: meta.unit,
       description: meta.description
     };
+  }).filter(p => {
+    if (!searchQuery) return true;
+    return p.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const [filteredSupporting, setFilteredSupporting] = useState<Product[]>([]);
@@ -145,72 +154,8 @@ export default function CatalogView({
         )}
       </AnimatePresence>
 
-      {/* Top Navigation Panel compatible with modern Enterprise layout */}
-      <header className="fixed top-0 left-0 w-full z-40 bg-white border-b border-gray-100 shadow-xs h-16 flex items-center justify-between px-4 md:px-12">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setSelectedCategory('all')}>
-            <span className="text-xl md:text-2xl font-black text-primary font-headline tracking-tight flex items-center gap-1">
-              <ShoppingBag className="w-6 h-6 text-accent fill-accent" />
-              {t.nav_brand}<span className="text-secondary font-medium text-base md:text-lg">{t.nav_enterprise}</span>
-            </span>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <button 
-              onClick={() => setSelectedCategory('all')} 
-              className={`pb-1 border-b-2 transition-all cursor-pointer ${
-                selectedCategory === 'all' ? 'border-secondary text-secondary font-bold' : 'border-transparent text-gray-500 hover:text-secondary'
-              }`}
-            >
-              {t.nav_home}
-            </button>
-            <a href="#bahan-utama" className="text-gray-500 hover:text-secondary transition-colors">{t.nav_catalog_main}</a>
-            <a href="#bahan-pendukung" className="text-gray-500 hover:text-secondary transition-colors">{t.nav_catalog_supporting}</a>
-          </nav>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-4">
-          {/* Search bar */}
-          <div className="relative hidden sm:block">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder={t.nav_search_placeholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-primary focus:border-transparent outline-none w-56 text-xs transition-all"
-            />
-          </div>
-
-          {/* Cart Icon trigger toggles shopping cart sidebar drawer */}
-          <button 
-            onClick={() => setIsCartDrawerOpen(!isCartDrawerOpen)}
-            className="relative p-2 text-gray-600 hover:text-secondary hover:bg-gray-50 rounded-full transition-all cursor-pointer active:scale-95"
-            id="cart-btn"
-          >
-            <ShoppingCart className="w-5 h-5 text-primary" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-sm animate-pulse">
-                {cartCount}
-              </span>
-            )}
-          </button>
-
-          {/* Admin panel switch */}
-          <button 
-            onClick={onNavigateToAdmin}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-opacity-90 active:scale-95 transition-all cursor-pointer"
-            id="admin-panel-btn"
-          >
-            <User className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">{t.nav_admin_console}</span>
-          </button>
-        </div>
-      </header>
-
       {/* Main showcase scroll body */}
-      <main className="pt-16">
+      <main className="pt-0">
         
         {/* Modern Immersive Hero Section */}
         <section className="relative w-full h-[450px] md:h-[520px] overflow-hidden">
@@ -249,8 +194,31 @@ export default function CatalogView({
         {/* Catalog Body Container */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 space-y-16">
           
-          {/* Section: BAHAN POKOK UTAMA */}
-          <section id="bahan-utama" className="scroll-mt-20">
+          {mainBahanPokok.length === 0 && filteredSupporting.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-100 p-12 text-center max-w-xl mx-auto my-12 shadow-sm">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 opacity-40 text-red-500" />
+              </div>
+              <h3 className="font-headline text-lg font-bold text-gray-950">
+                {currentLanguage === 'ID' ? 'Produk tidak ditemukan' : 'Product not found'}
+              </h3>
+              <p className="text-gray-500 text-xs md:text-sm mt-1 max-w-sm mx-auto">
+                {currentLanguage === 'ID' 
+                  ? `Tidak ada hasil pencarian untuk "${searchQuery}". Coba gunakan kata kunci lainnya.` 
+                  : `No search results matches for "${searchQuery}". Please try another keyword.`}
+              </p>
+              <button 
+                onClick={() => setSearchQuery('')}
+                className="mt-6 px-4 py-2 bg-[#FF6B35] text-white text-xs font-semibold rounded-lg hover:bg-opacity-90 transition-all cursor-pointer"
+              >
+                {currentLanguage === 'ID' ? 'Reset Pencarian' : 'Reset Search'}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Section: BAHAN POKOK UTAMA */}
+          {mainBahanPokok.length > 0 && (
+            <section id="bahan-utama" className="scroll-mt-20">
             <div className="flex justify-between items-end mb-8 border-l-4 border-primary pl-4">
               <div>
                 <h2 className="font-headline text-2xl font-black text-primary uppercase">{t.cat_main_title}</h2>
@@ -360,6 +328,7 @@ export default function CatalogView({
 
             </div>
           </section>
+          )}
 
           {/* Section: BAHAN PENDUKUNG / PELENGKAP */}
           <section id="bahan-pendukung" className="pt-4 scroll-mt-20">
@@ -480,6 +449,8 @@ export default function CatalogView({
               </AnimatePresence>
             </div>
           </section>
+            </>
+          )}
 
           {/* Section: Warm Buyer-Supportive Showcase */}
           <section className="bg-emerald-50/50 rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-8 border border-emerald-100 animate-fadeIn">

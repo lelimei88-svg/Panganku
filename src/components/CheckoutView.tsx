@@ -320,7 +320,7 @@ export default function CheckoutView({
     <div className="min-h-screen bg-bg-light pb-24 relative">
       
       {/* Checkout Minimalist Header */}
-      <header className="fixed top-0 left-0 w-full z-45 bg-white border-b border-gray-100 shadow-xs h-16 flex items-center justify-between px-4 md:px-12">
+      <div className="bg-white border-b border-gray-100 h-16 flex items-center justify-between px-4 md:px-12 relative">
         <button 
           onClick={onNavigateToCatalog}
           className="flex items-center gap-2 text-primary hover:text-secondary font-bold text-xs md:text-sm tracking-wider uppercase transition-colors group cursor-pointer"
@@ -339,10 +339,10 @@ export default function CheckoutView({
           <ShieldAlert className="w-5 h-5 text-accent fill-accent/10" />
           <span className="hidden sm:inline font-bold text-[10px] tracking-wider uppercase">{t.chk_header_desc}</span>
         </div>
-      </header>
+      </div>
 
       {/* Main Form Area */}
-      <main className="max-w-7xl mx-auto px-4 md:px-8 mt-24">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 mt-6">
         
         {orderCompleted ? (
           /* Order Complete Success Screen Widget */

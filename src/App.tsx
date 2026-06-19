@@ -29,7 +29,9 @@ import {
   Sparkles,
   Share2,
   MoreVertical,
-  PlusSquare
+  PlusSquare,
+  ShoppingBag,
+  Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext.tsx';
@@ -46,6 +48,8 @@ export default function App() {
   const [adminPasswordError, setAdminPasswordError] = useState('');
   const [adminErrorToast, setAdminErrorToast] = useState('');
   const [currentLanguage, setCurrentLanguage] = useState<'ID' | 'EN'>('ID');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'bumbu' | 'siap-saji' | 'minuman'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showLanguageToast, setShowLanguageToast] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -329,114 +333,187 @@ export default function App() {
   return (
     <div className="relative font-sans min-h-screen bg-[#f3fbf5]">
       
-      {/* Redesigned TOP NAVBAR based on image_fca525.png with brand theme from image_fe6323.png */}
-      <div className="bg-[#031505]/95 backdrop-blur-sm text-white font-sans sticky top-0 z-50 shadow-md border-b border-white/10 active:translate-y-0 select-none">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+      {/* Integrated PERSISTENT SINGLE WHITE ROW NAVIGATION CONTAINER */}
+      <header className="sticky top-0 z-50 w-full shadow-md select-none font-sans bg-white border-b border-gray-100 flex flex-col">
+        
+        {/* Unified White Row navbar */}
+        <div className="bg-white border-b border-gray-100 min-h-16 py-3 px-4 md:px-8 xl:px-12 flex items-center justify-between gap-4 w-full text-slate-800 flex-wrap md:flex-nowrap">
           
-          {/* Left Side: PanganKu Logo & Elegant ADMIN link with lock icon */}
-          <div className="flex items-center gap-5">
-            {/* PanganKu Logo */}
+          {/* Logo & Category Links */}
+          <div className="flex items-center gap-6 flex-wrap sm:flex-nowrap">
+            {/* Logo */}
             <div 
+              className="flex items-center gap-2 cursor-pointer transition-transform active:scale-95" 
               onClick={() => {
                 setActiveView('catalog');
+                setSelectedCategory('all');
                 setIsCartDrawerOpen(false);
               }}
-              className="flex items-center cursor-pointer active:scale-95 transition-transform"
-              id="brand-logo"
             >
-              <span className="font-headline font-black text-lg md:text-xl tracking-tight text-white select-none">
-                PANGAN<span className="text-[#FF6B35]">KU</span>
+              <span className="text-xl md:text-2xl font-black text-primary font-headline tracking-tight flex items-center gap-1 select-none">
+                <ShoppingBag className="w-6 h-6 text-[#FF6B35] fill-[#FF6B35]" />
+                {t.nav_brand}<span className="text-[#FF6B35] font-medium text-base md:text-lg">{t.nav_enterprise}</span>
               </span>
             </div>
 
-            <span className="w-[1px] h-5 bg-white/20 hidden sm:block"></span>
-
-            <button 
-              onClick={() => setIsAdminPasswordModalOpen(true)}
-              className="inline-flex items-center gap-2 text-xs font-black text-white/95 hover:text-[#FF6B35] transition-colors uppercase tracking-widest py-1.5 cursor-pointer"
-              id="admin-nav-link"
-            >
-              <Lock className="w-4 h-4 text-[#FF6B35] stroke-[2.5]" />
-              <span>{t.nav_admin}</span>
-            </button>
-          </div>
-
-          {/* Center-Left & Center-Right content wrapped nicely */}
-          <div className="flex items-center gap-3 md:gap-5 flex-wrap">
-            {/* Center-Left: Prominent PASANG APLIKASI with brand orange border */}
-            {isPwaInstalled ? (
+            {/* Navigation links & PWA badge */}
+            <nav className="flex items-center gap-4 md:gap-5 text-sm font-semibold text-slate-700 flex-wrap">
               <button 
                 onClick={() => {
-                  alert(currentLanguage === 'ID' 
-                    ? "Aplikasi PanganKu sudah berhasil terpasang di perangkat Anda & siap digunakan tanpa internet (offline)."
-                    : "PanganKu app is successfully installed & ready for full offline use."
-                  );
-                }}
-                className="px-3.5 py-1.5 md:py-2 border-2 border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white font-black text-[10.5px] md:text-xs tracking-widest rounded-xl transition-all duration-300 cursor-pointer flex items-center gap-1.5"
-                id="pwa-installed-nav-btn"
+                  setActiveView('catalog');
+                  setSelectedCategory('all');
+                }} 
+                className={`pb-0.5 border-b-2 transition-all cursor-pointer ${
+                  activeView === 'catalog' && selectedCategory === 'all' 
+                    ? 'border-[#FF6B35] text-[#FF6B35] font-bold' 
+                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                <span>{t.nav_app_installed}</span>
+                {t.nav_home}
               </button>
-            ) : (
               <button 
-                onClick={handleInstallClick}
-                className="px-3.5 py-1.5 md:py-2 border-2 border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-black text-[10.5px] md:text-xs tracking-widest rounded-xl transition-all duration-300 cursor-pointer shadow-[0_0_8px_rgba(255,107,53,0.15)] flex items-center gap-1.5"
-                id="pwa-install-nav-btn"
+                onClick={() => {
+                  setActiveView('catalog');
+                  setTimeout(() => {
+                    const el = document.getElementById('bahan-utama');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+                className="pb-0.5 border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
               >
-                <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>{t.nav_install_app}</span>
+                {t.nav_catalog_main}
               </button>
-            )}
+              <button 
+                onClick={() => {
+                  setActiveView('catalog');
+                  setTimeout(() => {
+                    const el = document.getElementById('bahan-pendukung');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+                className="pb-0.5 border-b-2 border-transparent text-slate-600 hover:text-slate-900 transition-all cursor-pointer mr-1"
+              >
+                {t.nav_catalog_supporting}
+              </button>
 
-            {/* Center-Right: Localized language switcher ID | EN with world icon */}
+              {/* PWA status badge right next to Bahan Pendukung link */}
+              {isPwaInstalled ? (
+                <span 
+                  onClick={() => {
+                    alert(currentLanguage === 'ID' 
+                      ? "Aplikasi PanganKu sudah berhasil terpasang di perangkat Anda & siap digunakan tanpa internet (offline)."
+                      : "PanganKu app is successfully installed & ready for full offline use."
+                    );
+                  }}
+                  className="px-2.5 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold text-[10px] tracking-wide rounded-lg flex items-center gap-1 cursor-pointer select-none"
+                  id="pwa-installed-nav-btn"
+                >
+                  <Check className="w-3 h-3 stroke-[3]" />
+                  <span>{t.nav_app_installed}</span>
+                </span>
+              ) : (
+                <button 
+                  onClick={handleInstallClick}
+                  className="px-2.5 py-1 border border-[#FF6B35] text-[#FF6B35] hover:bg-[#FF6B35] hover:text-white font-bold text-[10px] tracking-wide rounded-lg transition-all duration-300 cursor-pointer flex items-center gap-1"
+                  id="pwa-install-nav-btn"
+                >
+                  <Smartphone className="w-3 h-3" />
+                  <span>{t.nav_install_app}</span>
+                </button>
+              )}
+            </nav>
+          </div>
+
+          {/* Unified Right Actions Group */}
+          <div className="flex items-center gap-3.5 md:gap-5 flex-wrap sm:flex-nowrap ml-auto justify-end">
+            
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder={t.nav_search_placeholder}
+                value={searchQuery}
+                onChange={(e) => {
+                  if (activeView !== 'catalog') {
+                    setActiveView('catalog');
+                  }
+                  setSearchQuery(e.target.value);
+                }}
+                className="pl-9 pr-4 py-1.5 rounded-full border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent outline-none w-40 sm:w-52 text-xs transition-all text-slate-800"
+              />
+            </div>
+
+            {/* Language Switcher ('ID | EN') */}
             <button 
               onClick={() => {
                 setCurrentLanguage(prev => prev === 'ID' ? 'EN' : 'ID');
                 setShowLanguageToast(true);
                 setTimeout(() => setShowLanguageToast(false), 2000);
               }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold hover:bg-white/10 text-white/90 active:scale-95 transition-all cursor-pointer border border-white/5"
+              className="inline-flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-semibold hover:bg-gray-100 text-slate-700 active:scale-95 transition-all cursor-pointer border border-gray-100"
               title="Ganti Bahasa / Switch Language"
               id="language-switcher-btn"
             >
               <Globe className="w-3.5 h-3.5 text-[#FF6B35] stroke-[2]" />
-              <span className="font-mono tracking-wider font-extrabold text-[11px]">{currentLanguage === 'ID' ? 'ID | EN' : 'EN | ID'}</span>
+              <span className="font-mono tracking-wider font-extrabold text-[10.5px]">{currentLanguage === 'ID' ? 'ID' : 'EN'}</span>
             </button>
-          </div>
 
-          {/* Right-Center & Far Right groups */}
-          <div className="flex items-center gap-4">
-            {/* Right-Center: "AKUN SAYA" text link toggling profile info */}
+            {/* Shopping Cart Icon */}
+            <button 
+              onClick={() => setIsCartDrawerOpen(!isCartDrawerOpen)}
+              className="relative p-2 text-gray-600 hover:text-[#FF6B35] hover:bg-gray-50 rounded-full transition-all cursor-pointer active:scale-95"
+              id="cart-btn"
+            >
+              <ShoppingCart className="w-5 h-5 text-primary" />
+              {totalCartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-sm animate-pulse">
+                  {totalCartCount}
+                </span>
+              )}
+            </button>
+
+            {/* AKUN SAYA Component next to Cart */}
             <button 
               onClick={() => setIsProfileOpen(true)}
-              className="text-xs font-extrabold text-white/90 hover:text-[#FF6B35] hover:underline transition-all cursor-pointer flex items-center gap-2"
+              className="text-xs font-extrabold text-slate-700 hover:text-[#FF6B35] transition-all cursor-pointer flex items-center gap-2"
               id="my-account-nav-link"
             >
               {user?.photoURL ? (
-                <img src={user.photoURL} alt="Profile" className="w-5 h-5 rounded-full border border-[#FF6B35] referrerPolicy='no-referrer'" />
+                <img src={user.photoURL} alt="Profile" className="w-6 h-6 rounded-full border border-[#FF6B35] referrerPolicy='no-referrer'" />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-[#FF6B35]/20 border border-[#FF6B35]/40 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-[#FF6B35]/10 border border-[#FF6B35]/30 flex items-center justify-center">
                   <UserIcon className="w-3.5 h-3.5 text-[#FF6B35]" />
                 </div>
               )}
-              <span className="tracking-widest uppercase text-[11px]">{t.nav_my_account}</span>
+              <span className="tracking-wider uppercase text-[10px] hidden lg:inline">{t.nav_my_account}</span>
               {user && <span className="w-1.5 h-1.5 bg-[#FF6B35] rounded-full animate-pulse shrink-0"></span>}
             </button>
 
-            {/* Far Right: Active Shopping Cart / Checkout interface button */}
+            {/* Retain Main Orange Action Button */}
             <button 
               onClick={handleStartNow}
-              className="bg-[#FF6B35] text-white hover:bg-[#E55A2B] font-semibold px-5 py-2 rounded-md shadow-sm transition-all duration-200 ease-in-out flex items-center gap-2 text-[11px] md:text-sm font-headline active:scale-95 cursor-pointer uppercase tracking-widest animate-[pulse_3s_infinite]"
+              className="bg-[#FF6B35] text-white hover:bg-[#E55A2B] font-semibold px-4 py-2 rounded-lg shadow-sm transition-all duration-200 ease-in-out flex items-center gap-1.5 text-xs font-headline active:scale-95 cursor-pointer uppercase tracking-wider hidden sm:flex"
               id="start-now-nav-btn"
             >
-              <ShoppingCart className="w-4 h-4 stroke-[2.5]" />
+              <ShoppingCart className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>{t.nav_start_shopping}</span>
             </button>
-          </div>
 
+            {/* Admin Switch (was "Konsol Admin", now simply says "Admin") */}
+            <button 
+              onClick={() => setIsAdminPasswordModalOpen(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-opacity-90 active:scale-95 transition-all cursor-pointer"
+              id="admin-panel-btn"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Admin</span>
+            </button>
+
+          </div>
         </div>
-      </div>
+
+      </header>
 
       {/* Offline Mode Banner */}
       <AnimatePresence>
@@ -829,6 +906,10 @@ export default function App() {
               onRemoveItem={handleRemoveItem}
               onClearCart={handleClearCart}
               currentLanguage={currentLanguage}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
             />
           )}
 
