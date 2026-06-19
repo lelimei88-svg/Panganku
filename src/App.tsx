@@ -490,15 +490,7 @@ export default function App() {
               {user && <span className="w-1.5 h-1.5 bg-[#FF6B35] rounded-full animate-pulse shrink-0"></span>}
             </button>
 
-            {/* Retain Main Orange Action Button */}
-            <button 
-              onClick={handleStartNow}
-              className="bg-[#FF6B35] text-white hover:bg-[#E55A2B] font-semibold px-4 py-2 rounded-lg shadow-sm transition-all duration-200 ease-in-out flex items-center gap-1.5 text-xs font-headline active:scale-95 cursor-pointer uppercase tracking-wider hidden sm:flex"
-              id="start-now-nav-btn"
-            >
-              <ShoppingCart className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>{t.nav_start_shopping}</span>
-            </button>
+
 
             {/* Admin Switch (was "Konsol Admin", now simply says "Admin") */}
             <button 
